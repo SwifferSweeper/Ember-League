@@ -1,0 +1,64 @@
+name: Daily Riot Data Collection
+
+on:
+  schedule:
+    # Run daily at 6:00 AM UTC (1:00 AM EST / 2:00 AM EDT)
+    - cron: '0 6 * * *'
+  
+  # Allow manual triggering from GitHub Actions tab
+  workflow_dispatch:
+    inputs:
+      match_count:
+        description: 'Number of matches to fetch per summoner'
+        required: false
+        default: '20'
+        type: string
+
+jobs:
+  collect-data:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Download existing database
+        uses: actions/download-artifact@v4
+        with:
+          name: match-database
+          path: data/
+        continue-on-error: true
+      
+      - name: Run data collection
+        env:
+          RIOT_API_KEY: ${{ secrets.RIOT_API_KEY }}
+        run: |
+          cd src
+          python main.py
+      
+      - name: Upload database artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: match-database
+          path: data/match_data.db
+          retention-days: 30
+      
+      - name: Generate summary report
+        run: |
+          echo "## Data Collection Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Run Date:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status:** Completed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Check the logs for detailed information about matches collected." >> $GITHUB_STEP_SUMMARY

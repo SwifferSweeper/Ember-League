@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Create Draft - League Tracker{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h1>Create Draft Session</h1>
+        <a href="{{ url_for('draft_index') }}" class="btn btn-secondary">Back to Drafts</a>
+    </div>
+
+    <div class="form-container">
+        <form method="POST" class="draft-form">
+            <div class="form-group">
+                <label for="name">Session Name</label>
+                <input type="text" id="name" name="name" placeholder="e.g., Series vs Team Liquid" required>
+            </div>
+
+            <div class="form-group">
+                <label for="draft_mode">Draft Mode</label>
+                <select id="draft_mode" name="draft_mode" required>
+                    <option value="">Select a mode...</option>
+                    <option value="normal">Normal Draft</option>
+                    <option value="fearless">Fearless Draft</option>
+                    <option value="ironman">Ironman Draft</option>
+                </select>
+                <p class="form-hint">Choose the draft mode for your series. See <a href="{{ url_for('draft_index') }}">draft info</a> for details.</p>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="team_blue_id">Blue Team</label>
+                    <select id="team_blue_id" name="team_blue_id" required>
+                        <option value="">Select blue team...</option>
+                        {% for team in teams %}
+                            <option value="{{ team.id }}">{{ team.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="team_red_id">Red Team</label>
+                    <select id="team_red_id" name="team_red_id" required>
+                        <option value="">Select red team...</option>
+                        {% for team in teams %}
+                            <option value="{{ team.id }}">{{ team.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="bans_per_team">Bans Per Team</label>
+                <select id="bans_per_team" name="bans_per_team">
+                    <option value="3">3 Bans</option>
+                    <option value="5" selected>5 Bans</option>
+                    <option value="10">10 Bans</option>
+                </select>
+                <p class="form-hint">Number of bans per team per game.</p>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary btn-large">Create Draft Session</button>
+                <a href="{{ url_for('draft_index') }}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

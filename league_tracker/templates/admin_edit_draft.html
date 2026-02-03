@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Draft: {{ draft_session.name }} - League Tracker Admin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Edit Draft Session</h1>
+    <a href="{{ url_for('admin_draft_detail', session_id=draft_session.id) }}" class="btn btn-secondary">Back to Detail</a>
+</div>
+
+<div class="draft-form">
+    <form method="POST">
+        <div class="form-section">
+            <h2>Draft Settings</h2>
+            
+            <div class="form-group">
+                <label for="name">Draft Name</label>
+                <input type="text" id="name" name="name" value="{{ draft_session.name }}" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="draft_mode">Draft Mode</label>
+                <select id="draft_mode" name="draft_mode">
+                    <option value="normal" {% if draft_session.draft_mode == 'normal' %}selected{% endif %}>Normal</option>
+                    <option value="fearless" {% if draft_session.draft_mode == 'fearless' %}selected{% endif %}>Fearless</option>
+                    <option value="ironman" {% if draft_session.draft_mode == 'ironman' %}selected{% endif %}>Ironman</option>
+                </select>
+                <p class="form-hint">
+                    Normal: Standard draft | Fearless: Can't pick previously used champions | Ironman: Player-specific picks
+                </p>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="team_blue_id">Blue Team</label>
+                    <select id="team_blue_id" name="team_blue_id" required>
+                        <option value="">Select Blue Team</option>
+                        {% for team in teams %}
+                            <option value="{{ team.id }}" {% if draft_session.team_blue_id == team.id %}selected{% endif %}>
+                                {{ team.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="team_red_id">Red Team</label>
+                    <select id="team_red_id" name="team_red_id" required>
+                        <option value="">Select Red Team</option>
+                        {% for team in teams %}
+                            <option value="{{ team.id }}" {% if draft_session.team_red_id == team.id %}selected{% endif %}>
+                                {{ team.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="bans_per_team">Bans Per Team</label>
+                    <input type="number" id="bans_per_team" name="bans_per_team" value="{{ draft_session.bans_per_team }}" min="0" max="10" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="picks_per_team">Picks Per Team</label>
+                    <input type="number" id="picks_per_team" name="picks_per_team" value="{{ draft_session.picks_per_team }}" min="0" max="10" required>
+                </div>
+            </div>
+        </div>
+        
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary btn-large">Save Changes</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

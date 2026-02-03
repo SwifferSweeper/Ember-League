@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}Draft Tool - League Tracker{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h1>League Draft Tool</h1>
+        <p class="lead">Create and manage champion drafts for your matches</p>
+    </div>
+
+    <div class="draft-modes-info">
+        <h2>Draft Modes</h2>
+        <div class="mode-cards">
+            <div class="mode-card">
+                <h3>Normal Draft</h3>
+                <p>Standard competitive draft with bans and picks. Champions are available for selection in each game.</p>
+                <ul>
+                    <li>5 bans per team</li>
+                    <li>10 picks (5 per team)</li>
+                    <li>Alternating ban/pick order</li>
+                </ul>
+            </div>
+            <div class="mode-card">
+                <h3>Fearless Draft</h3>
+                <p>Champions banned or picked in previous games cannot be selected again in the same series.</p>
+                <ul>
+                    <li>5 bans per team</li>
+                    <li>10 picks (5 per team)</li>
+                    <li>Cumulative champion pool restriction</li>
+                </ul>
+            </div>
+            <div class="mode-card">
+                <h3>Ironman Draft</h3>
+                <p>Each player must pick a champion for their specific role. Adds strategic depth to drafting.</p>
+                <ul>
+                    <li>5 bans per team</li>
+                    <li>10 picks (5 per team)</li>
+                    <li>Position-specific drafting</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="active-drafts">
+        <h2>Active Draft Sessions</h2>
+        {% if active_sessions %}
+            <div class="sessions-list">
+                {% for session in active_sessions %}
+                    <div class="session-card">
+                        <div class="session-info">
+                            <h3>{{ session.name }}</h3>
+                            <span class="badge badge-{{ session.draft_mode }}">{{ session.draft_mode|capitalize }}</span>
+                        </div>
+                        <div class="session-teams">
+                            <div class="team blue">
+                                <span class="team-color"></span>
+                                <span>{{ session.team_blue.name if session.team_blue else 'TBD' }}</span>
+                            </div>
+                            <div class="vs">VS</div>
+                            <div class="team red">
+                                <span class="team-color"></span>
+                                <span>{{ session.team_red.name if session.team_red else 'TBD' }}</span>
+                            </div>
+                        </div>
+                        <div class="session-meta">
+                            <span>Game {{ session.current_game_number }}/3</span>
+                            <span class="badge badge-{{ session.current_phase }}">{{ session.current_phase|capitalize }} Phase</span>
+                        </div>
+                        {% if session.id in session_games %}
+                            {% set game = session_games[session.id] %}
+                            <div class="session-links">
+                                <div class="link-row">
+                                    <span class="link-label">Blue:</span>
+                                    <a href="{{ game.blue_side_link }}" target="_blank" class="game-link">Join</a>
+                                    {% if game.blue_ready %}
+                                        <span class="ready-indicator ready">✓ Ready</span>
+                                    {% else %}
+                                        <span class="ready-indicator">Not Ready</span>
+                                    {% endif %}
+                                </div>
+                                <div class="link-row">
+                                    <span class="link-label">Spec:</span>
+                                    <a href="{{ game.spectator_link }}" target="_blank" class="game-link">Spectate</a>
+                                </div>
+                                <div class="link-row">
+                                    <span class="link-label">Red:</span>
+                                    <a href="{{ game.red_side_link }}" target="_blank" class="game-link">Join</a>
+                                    {% if game.red_ready %}
+                                        <span class="ready-indicator ready">✓ Ready</span>
+                                    {% else %}
+                                        <span class="ready-indicator">Not Ready</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endif %}
+                        <a href="{{ url_for('draft_view', session_id=session.id) }}" class="btn btn-primary">Continue Draft</a>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="empty-state">No active draft sessions. Create a new one to get started!</p>
+        {% endif %}
+    </div>
+
+    <div class="closed-drafts">
+        <h2>Closed Draft Sessions</h2>
+        {% if closed_sessions %}
+            <div class="sessions-list">
+                {% for session in closed_sessions %}
+                    <div class="session-card completed">
+                        <div class="session-info">
+                            <h3>{{ session.name }}</h3>
+                            <span class="badge badge-completed">Completed</span>
+                        </div>
+                        <div class="session-teams">
+                            <div class="team blue">
+                                <span class="team-color"></span>
+                                <span>{{ session.team_blue.name if session.team_blue else 'TBD' }}</span>
+                            </div>
+                            <div class="vs">VS</div>
+                            <div class="team red">
+                                <span class="team-color"></span>
+                                <span>{{ session.team_red.name if session.team_red else 'TBD' }}</span>
+                            </div>
+                        </div>
+                        <div class="session-meta">
+                            <span>{{ session.draft_mode|capitalize }} Mode</span>
+                            <span>Completed {{ session.completed_at.strftime('%Y-%m-%d') if session.completed_at else '' }}</span>
+                        </div>
+                        <a href="{{ url_for('draft_history', session_id=session.id) }}" class="btn btn-secondary">View History</a>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="empty-state">No completed draft sessions yet.</p>
+        {% endif %}
+    </div>
+
+    <div class="create-draft-section">
+        <a href="{{ url_for('draft_create') }}" class="btn btn-large btn-primary">Create New Draft Session</a>
+    </div>
+</div>
+{% endblock %}

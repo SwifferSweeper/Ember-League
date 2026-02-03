@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Drafts - League Tracker Admin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Manage Drafts</h1>
+    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
+</div>
+
+{% if sessions %}
+    <div class="sessions-list">
+        {% for session in sessions %}
+            <div class="session-card">
+                <div class="session-info">
+                    <h3>{{ session.name }}</h3>
+                    <div class="session-teams">
+                        <span class="team">
+                            <span class="team-color blue"></span>
+                            {{ session.team_blue.name if session.team_blue else 'Unknown' }}
+                        </span>
+                        <span class="vs">vs</span>
+                        <span class="team">
+                            <span class="team-color red"></span>
+                            {{ session.team_red.name if session.team_red else 'Unknown' }}
+                        </span>
+                    </div>
+                </div>
+                <div class="session-meta">
+                    <span class="badge badge-{{ session.draft_mode }}">{{ session.draft_mode|capitalize }}</span>
+                    <span class="badge {% if session.is_active %}badge-in-progress{% else %}badge-completed{% endif %}">
+                        {{ 'Active' if session.is_active else 'Completed' }}
+                    </span>
+                    <span>Game {{ session.current_game_number }}/3</span>
+                    <span>{{ session.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                </div>
+                <div class="session-actions">
+                    <a href="{{ url_for('admin_draft_detail', session_id=session.id) }}" class="btn btn-primary">Manage</a>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="empty-state">
+        <h2>No Draft Sessions</h2>
+        <p>There are no draft sessions yet. Create one from the draft tool.</p>
+        <a href="{{ url_for('draft_create') }}" class="btn btn-primary">Create Draft</a>
+    </div>
+{% endif %}
+{% endblock %}

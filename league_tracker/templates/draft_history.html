@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block title %}Draft History: {{ session.name }} - League Tracker{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h1>Draft History: {{ session.name }}</h1>
+        <a href="{{ url_for('draft_view', session_id=session.id) }}" class="btn btn-primary">Back to Draft</a>
+    </div>
+
+    <div class="draft-summary">
+        <div class="summary-item">
+            <span class="label">Mode:</span>
+            <span class="badge badge-{{ session.draft_mode }}">{{ session.draft_mode|capitalize }}</span>
+        </div>
+        <div class="summary-item">
+            <span class="label">Teams:</span>
+            <span>{{ session.team_blue.name if session.team_blue else 'TBD' }} vs {{ session.team_red.name if session.team_red else 'TBD' }}</span>
+        </div>
+        <div class="summary-item">
+            <span class="label">Status:</span>
+            <span>{{ 'Completed' if not session.is_active else 'In Progress' }}</span>
+        </div>
+    </div>
+
+    <div class="series-history">
+        {% for game in history %}
+            <div class="game-history {% if game.is_completed %}completed{% else %}in-progress{% endif %}">
+                <div class="game-header">
+                    <h2>Game {{ game.game_number }}</h2>
+                    <span class="badge badge-{{ 'completed' if game.is_completed else 'in-progress' }}">
+                        {{ 'Completed' if game.is_completed else 'In Progress' }}
+                    </span>
+                </div>
+
+{% set ns = namespace(champion_name='') %}
+                <div class="game-bans">
+                    <div class="bans-team blue">
+                        <h4>{{ session.team_blue.name if session.team_blue else 'Blue' }} Bans</h4>
+                        <div class="ban-icons">
+                            {% for champion_id in game.bans_blue %}
+                                {% set cid = champion_id|string %}
+                                <div class="ban-icon-small">
+                                    <img src="https://ddragon.leagueoflegends.com/cdn/img/champion/splash/{{ champion_names[cid] if cid in champion_names else 'Unknown' }}_0.jpg" 
+                                         alt="{{ champion_names[cid] if cid in champion_names else 'Unknown' }}"
+                                         onerror="this.style.display='none'">
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="bans-team red">
+                        <h4>{{ session.team_red.name if session.team_red else 'Red' }} Bans</h4>
+                        <div class="ban-icons">
+                            {% for champion_id in game.bans_red %}
+                                {% set cid = champion_id|string %}
+                                <div class="ban-icon-small">
+                                    <img src="https://ddragon.leagueoflegends.com/cdn/img/champion/splash/{{ champion_names[cid] if cid in champion_names else 'Unknown' }}_0.jpg" 
+                                         alt="{{ champion_names[cid] if cid in champion_names else 'Unknown' }}"
+                                         onerror="this.style.display='none'">
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="game-picks">
+                    <div class="picks-team blue">
+                        <h4>{{ session.team_blue.name if session.team_blue else 'Blue' }} Picks</h4>
+                        <div class="pick-list">
+                            {% for pick in game.picks_blue %}
+                                {% set cid = pick.champion_id|string %}
+                                <div class="pick-item">
+                                    <span class="position-badge">{{ pick.position|upper }}</span>
+                                    <img src="https://ddragon.leagueoflegends.com/cdn/img/champion/splash/{{ champion_names[cid] if cid in champion_names else 'Unknown' }}_0.jpg" 
+                                         alt="{{ champion_names[cid] if cid in champion_names else 'Unknown' }}"
+                                         onerror="this.style.display='none'">
+                                    <span class="champion-name">{{ champion_names[cid] if cid in champion_names else 'Unknown' }}</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="picks-team red">
+                        <h4>{{ session.team_red.name if session.team_red else 'Red' }} Picks</h4>
+                        <div class="pick-list">
+                            {% for pick in game.picks_red %}
+                                {% set cid = pick.champion_id|string %}
+                                <div class="pick-item">
+                                    <span class="position-badge">{{ pick.position|upper }}</span>
+                                    <img src="https://ddragon.leagueoflegends.com/cdn/img/champion/splash/{{ champion_names[cid] if cid in champion_names else 'Unknown' }}_0.jpg" 
+                                         alt="{{ champion_names[cid] if cid in champion_names else 'Unknown' }}"
+                                         onerror="this.style.display='none'">
+                                    <span class="champion-name">{{ champion_names[cid] if cid in champion_names else 'Unknown' }}</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="draft-steps">
+                    <h4>Draft Log</h4>
+                    <ul class="steps-list">
+                        {% for step in game.steps %}
+                            <li class="step-item {{ step.step_type }} {{ step.team }}">
+                                <span class="step-number">#{{ step.step_number }}</span>
+                                <span class="step-type">{{ step.step_type|upper }}</span>
+                                <span class="step-team {{ step.team }}">{{ step.team|capitalize }}</span>
+                                <span class="step-champion">
+                                    {% if step.champion_id %}
+                                        {% set cid = step.champion_id|string %}
+                                        <img src="https://ddragon.leagueoflegends.com/cdn/img/champion/splash/{{ champion_names[cid] if cid in champion_names else 'Unknown' }}_0.jpg" 
+                                             alt="{{ champion_names[cid] if cid in champion_names else 'Unknown' }}"
+                                             onerror="this.style.display='none'">
+                                        {{ champion_names[cid] if cid in champion_names else 'Unknown' }}
+                                    {% else %}
+                                        Unknown
+                                    {% endif %}
+                                </span>
+                                {% if step.position %}
+                                    <span class="step-position">{{ step.position|upper }}</span>
+                                {% endif %}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>

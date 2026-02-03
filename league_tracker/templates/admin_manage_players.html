@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Players - {{ team.name }} - League Tracker{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Manage Players</h1>
+    <p>Team: {{ team.name }}</p>
+</div>
+
+<div class="two-column-layout">
+    <!-- Current Players -->
+    <div class="column">
+        <div class="card">
+            <h3>Current Players ({{ team.players|length }})</h3>
+            {% if team.players %}
+            <ul class="player-list">
+                {% for player in team.players %}
+                <li class="player-item">
+                    <span>{{ player.game_name }}#{{ player.tag_line }}</span>
+                    <form method="POST" style="display: inline;">
+                        <input type="hidden" name="action" value="remove">
+                        <input type="hidden" name="player_id" value="{{ player.id }}">
+                        <button type="submit" class="btn btn-small btn-danger"
+                                onclick="return confirm('Remove {{ player.game_name }}#{{ player.tag_line }} from this team?');">
+                            Remove
+                        </button>
+                    </form>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="empty-message">No players on this team yet.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Add Players -->
+    <div class="column">
+        <div class="card">
+            <h3>Add Existing Player</h3>
+            {% if available_players %}
+            <form method="POST">
+                <input type="hidden" name="action" value="add">
+                <div class="form-group">
+                    <select name="player_id" required>
+                        <option value="">Select a player...</option>
+                        {% for player in available_players %}
+                        <option value="{{ player.id }}">{{ player.game_name }}#{{ player.tag_line }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">Add Player</button>
+            </form>
+            {% else %}
+            <p class="empty-message">No available players to add.</p>
+            {% endif %}
+        </div>
+
+        <div class="card">
+            <h3>Create New Player</h3>
+            <form method="POST">
+                <input type="hidden" name="action" value="create">
+                <div class="form-group">
+                    <label>Game Name *</label>
+                    <input type="text" name="game_name" required placeholder="e.g., Faker">
+                </div>
+                <div class="form-group">
+                    <label>Tag Line *</label>
+                    <input type="text" name="tag_line" required placeholder="e.g., KR1">
+                </div>
+                <div class="form-group">
+                    <label>Region</label>
+                    <select name="region">
+                        <option value="na1">NA</option>
+                        <option value="euw1">EUW</option>
+                        <option value="eun1">EUNE</option>
+                        <option value="kr">KR</option>
+                        <option value="jp1">JP</option>
+                        <option value="br1">BR</option>
+                        <option value="la1">LAN</option>
+                        <option value="la2">LAS</option>
+                        <option value="oc1">OCE</option>
+                        <option value="tr1">TR</option>
+                        <option value="ru">RU</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">Create & Add</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div style="margin-top: 2rem;">
+    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.two-column-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+}
+
+.card {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.card h3 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #eee;
+}
+
+.player-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.player-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #f5f5f5;
+}
+
+.player-item:last-child {
+    border-bottom: none;
+}
+
+.empty-message {
+    color: #666;
+    font-style: italic;
+}
+
+@media (max-width: 768px) {
+    .two-column-layout {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Draft: {{ draft_session.name }} - League Tracker Admin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>{{ draft_session.name }}</h1>
+        <p class="team-meta">
+            <span class="badge badge-{{ draft_session.draft_mode }}">{{ draft_session.draft_mode|capitalize }}</span>
+            <span class="badge {% if draft_session.is_active %}badge-in-progress{% else %}badge-completed{% endif %}">
+                {{ 'Active' if draft_session.is_active else 'Completed' }}
+            </span>
+        </p>
+    </div>
+    <div class="page-header-actions">
+        <a href="{{ url_for('admin_drafts') }}" class="btn btn-secondary">Back to Drafts</a>
+        <a href="{{ url_for('draft_view', session_id=draft_session.id) }}" class="btn btn-secondary">View Live Draft</a>
+        <a href="{{ url_for('admin_edit_draft', session_id=draft_session.id) }}" class="btn btn-primary">Edit Settings</a>
+    </div>
+</div>
+
+<div class="draft-summary">
+    <div class="summary-item">
+        <span class="label">Blue Team:</span>
+        <span>{{ draft_session.team_blue.name if draft_session.team_blue else 'Unknown' }}</span>
+    </div>
+    <div class="summary-item">
+        <span class="label">Red Team:</span>
+        <span>{{ draft_session.team_red.name if draft_session.team_red else 'Unknown' }}</span>
+    </div>
+    <div class="summary-item">
+        <span class="label">Current Game:</span>
+        <span>{{ draft_session.current_game_number }} / 3</span>
+    </div>
+    <div class="summary-item">
+        <span class="label">Phase:</span>
+        <span class="badge badge-{{ draft_session.current_phase }}">{{ draft_session.current_phase|upper }}</span>
+    </div>
+</div>
+
+<div class="admin-actions-bar">
+    {% if draft_session.is_active %}
+        <form action="{{ url_for('admin_toggle_draft_active', session_id=draft_session.id) }}" method="POST" style="display: inline;">
+            <button type="submit" class="btn btn-warning">Mark as Complete</button>
+        </form>
+    {% else %}
+        <form action="{{ url_for('admin_toggle_draft_active', session_id=draft_session.id) }}" method="POST" style="display: inline;">
+            <button type="submit" class="btn btn-secondary">Reopen Draft</button>
+        </form>
+    {% endif %}
+    <form action="{{ url_for('admin_delete_draft', session_id=draft_session.id) }}" method="POST" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this draft session? This action cannot be undone.');">
+        <button type="submit" class="btn btn-remove">Delete Draft</button>
+    </form>
+</div>
+
+<h2>Series History</h2>
+<div class="series-history">
+    {% for game in history %}
+        <div class="game-history {% if game.is_completed %}completed{% else %}in-progress{% endif %}">
+            <div class="game-header">
+                <h2>Game {{ game.game_number }}</h2>
+                <div class="game-actions">
+                    {% if not game.is_completed %}
+                        <form action="{{ url_for('admin_reset_game', session_id=draft_session.id, game_number=game.game_number) }}" method="POST" style="display: inline;">
+                            <button type="submit" class="btn btn-warning" onclick="return confirm('Reset this game? All bans and picks will be cleared.');">Reset Game</button>
+                        </form>
+                    {% else %}
+                        <span class="badge badge-completed">Completed</span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="game-bans">
+                <div>
+                    <h4>Blue Bans</h4>
+                    <div class="ban-icons">
+                        {% if game.bans_blue %}
+                            {% for champion_id in game.bans_blue %}
+                                {% if champion_names[champion_id] %}
+                                    <div class="ban-icon-small" title="{{ champion_names[champion_id].name }}">
+                                        <img src="https://ddragon.leagueoflegends.com/cdn/img/champion/splash/{{ champion_names[champion_id].name }}_0.jpg" 
+                                             alt="{{ champion_names[champion_id].name }}"
+                                             onerror="this.style.display='none'">
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            <p class="empty-text">No bans</p>
+                        {% endif %}
+                    </div>
+                </div>
+                <div>
+                    <h4>Red Bans</h4>
+                    <div class="ban-icons">
+                        {% if game.bans_red %}
+                            {% for champion_id in game.bans_red %}
+                                {% if champion_names[champion_id] %}
+                                    <div class="ban-icon-small" title="{{ champion_names[champion_id].name }}">
+                                        <img src="https://ddragon.leagueoflegends.com/cdn/img/champion/splash/{{ champion_names[champion_id].name }}_0.jpg" 
+                                             alt="{{ champion_names[champion_id].name }}"
+                                             onerror="this.style.display='none'">
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            <p class="empty-text">No bans</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="game-picks">
+                <div>
+                    <h4>Blue Picks</h4>
+                    <div class="pick-list">
+                        {% if game.picks_blue %}
+                            {% for pick in game.picks_blue %}
+                                {% if champion_names[pick.champion_id] %}
+                                    <div class="pick-item">
+                                        <img src="https://ddragon.leagueoflegends.com/cdn/img/champion/splash/{{ champion_names[pick.champion_id].name }}_0.jpg" 
+                                             alt="{{ champion_names[pick.champion_id].name }}"
+                                             onerror="this.style.display='none'">
+                                        <span class="champion-name">{{ champion_names[pick.champion_id].name }}</span>
+                                        {% if pick.position %}
+                                            <span class="position-badge">{{ pick.position }}</span>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            <p class="empty-text">No picks</p>
+                        {% endif %}
+                    </div>
+                </div>
+                <div>
+                    <h4>Red Picks</h4>
+                    <div class="pick-list">
+                        {% if game.picks_red %}
+                            {% for pick in game.picks_red %}
+                                {% if champion_names[pick.champion_id] %}
+                                    <div class="pick-item">
+                                        <img src="https://ddragon.leagueoflegends.com/cdn/img/champion/splash/{{ champion_names[pick.champion_id].name }}_0.jpg" 
+                                             alt="{{ champion_names[pick.champion_id].name }}"
+                                             onerror="this.style.display='none'">
+                                        <span class="champion-name">{{ champion_names[pick.champion_id].name }}</span>
+                                        {% if pick.position %}
+                                            <span class="position-badge">{{ pick.position }}</span>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            <p class="empty-text">No picks</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            {% if game.steps %}
+                <div class="draft-steps">
+                    <h4>Draft Steps</h4>
+                    <ul class="steps-list">
+                        {% for step in game.steps %}
+                            <li class="step-item {{ step.step_type }} {{ step.team }}">
+                                <span class="step-number">#{{ step.step_number }}</span>
+                                <span class="step-type">{{ step.step_type|upper }}</span>
+                                <span class="step-team {{ step.team }}">{{ step.team|capitalize }}</span>
+                                {% if step.champion_id and champion_names[step.champion_id] %}
+                                    <div class="step-champion">
+                                        <img src="https://ddragon.leagueoflegends.com/cdn/img/champion/splash/{{ champion_names[step.champion_id].name }}_0.jpg" 
+                                             alt="{{ champion_names[step.champion_id].name }}"
+                                             onerror="this.style.display='none'">
+                                        <span>{{ champion_names[step.champion_id].name }}</span>
+                                    </div>
+                                {% endif %}
+                                {% if step.position %}
+                                    <span class="step-position">{{ step.position }}</span>
+                                {% endif %}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+        </div>
+    {% endfor %}
+</div>
+
+<style>
+.admin-actions-bar {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    padding: 1rem;
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+}
+
+.page-header-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.empty-text {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.game-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+</style>
+{% endblock %}

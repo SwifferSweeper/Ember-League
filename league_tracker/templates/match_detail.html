@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}Match {{ match.match_id }} - League Tracker{% endblock %}
+
+{% block content %}
+<div class="match-header">
+    <div class="match-info">
+        <h1>Match {{ match.match_id }}</h1>
+        <p class="match-meta">
+            {{ format_timestamp(match.game_creation) }} • 
+            {{ format_duration(match.game_duration) }}
+        </p>
+    </div>
+</div>
+
+<div class="match-stats">
+    <div class="team-section">
+        <h2>Blue Team</h2>
+        <table class="participants-table">
+            <thead>
+                <tr>
+                    <th>Player</th>
+                    <th>Champion</th>
+                    <th>K</th>
+                    <th>D</th>
+                    <th>A</th>
+                    <th>KDA</th>
+                    <th>Gold</th>
+                    <th>CS</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in participants if p.team_id == 100 %}
+                <tr class="{{ 'win' if p.win else 'loss' }}">
+                    <td>
+                        {% if p.puuid in players %}
+                            {{ players[p.puuid].display_name }}
+                        {% else %}
+                            Unknown
+                        {% endif %}
+                    </td>
+                    <td>{{ p.champion_name }}</td>
+                    <td>{{ p.kills }}</td>
+                    <td>{{ p.deaths }}</td>
+                    <td>{{ p.assists }}</td>
+                    <td>{{ p.kda }}</td>
+                    <td>{{ p.gold_earned }}</td>
+                    <td>{{ p.cs }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="team-section">
+        <h2>Red Team</h2>
+        <table class="participants-table">
+            <thead>
+                <tr>
+                    <th>Player</th>
+                    <th>Champion</th>
+                    <th>K</th>
+                    <th>D</th>
+                    <th>A</th>
+                    <th>KDA</th>
+                    <th>Gold</th>
+                    <th>CS</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in participants if p.team_id == 200 %}
+                <tr class="{{ 'win' if p.win else 'loss' }}">
+                    <td>
+                        {% if p.puuid in players %}
+                            {{ players[p.puuid].display_name }}
+                        {% else %}
+                            Unknown
+                        {% endif %}
+                    </td>
+                    <td>{{ p.champion_name }}</td>
+                    <td>{{ p.kills }}</td>
+                    <td>{{ p.deaths }}</td>
+                    <td>{{ p.assists }}</td>
+                    <td>{{ p.kda }}</td>
+                    <td>{{ p.gold_earned }}</td>
+                    <td>{{ p.cs }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+.match-header {
+    margin-bottom: 2rem;
+}
+.match-meta {
+    color: #a0a0a0;
+}
+.match-stats {
+    display: grid;
+    gap: 2rem;
+}
+.team-section h2 {
+    margin-bottom: 1rem;
+}
+.participants-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #16213e;
+    border-radius: 8px;
+    overflow: hidden;
+}
+.participants-table th,
+.participants-table td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid #0f3460;
+}
+.participants-table th {
+    background-color: #0f3460;
+}
+.participants-table tr.win {
+    background-color: rgba(0, 184, 148, 0.1);
+}
+.participants-table tr.loss {
+    background-color: rgba(233, 69, 96, 0.1);
+}
+</style>
+{% endblock %}

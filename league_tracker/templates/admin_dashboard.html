@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - League Tracker{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Admin Dashboard</h1>
+    <p>Manage all registered teams</p>
+</div>
+
+<div class="mb-3">
+    <a href="{{ url_for('admin_tournament_codes') }}" class="btn btn-secondary">Manage Tournament Codes</a>
+    <a href="{{ url_for('admin_drafts') }}" class="btn btn-primary">Manage Drafts</a>
+</div>
+
+{% if teams %}
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>Team Name</th>
+            <th>Players</th>
+            <th>Created</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for team in teams %}
+        <tr>
+            <td>
+                <a href="{{ url_for('team_detail', team_id=team.id) }}">{{ team.name }}</a>
+            </td>
+            <td>{{ team.players|length }}</td>
+            <td>{{ team.created_at.strftime('%Y-%m-%d') }}</td>
+            <td class="action-buttons">
+                <a href="{{ url_for('admin_edit_team', team_id=team.id) }}" 
+                   class="btn btn-small btn-secondary">Edit</a>
+                <a href="{{ url_for('admin_manage_players', team_id=team.id) }}" 
+                   class="btn btn-small btn-secondary">Players</a>
+                <form action="{{ url_for('admin_delete_team', team_id=team.id) }}" 
+                      method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-small btn-danger" 
+                            onclick="return confirm('Are you sure you want to delete this team? This cannot be undone.');">Delete</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No teams registered yet.</p>
+{% endif %}
+
+<div style="margin-top: 2rem;">
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">Back to Home</a>
+</div>
+{% endblock %}

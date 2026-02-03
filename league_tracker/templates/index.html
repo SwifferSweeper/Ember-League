@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Home - League Tracker{% endblock %}
+
+{% block content %}
+<div class="hero">
+    <h1>League Tracker</h1>
+    <p>Track your league matches, statistics, and team performance in real-time</p>
+    <a href="{{ url_for('signup') }}" class="btn btn-large btn-primary">Register Your Team</a>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-number">{{ total_teams }}</div>
+        <div class="stat-label">Teams Registered</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ total_players }}</div>
+        <div class="stat-label">Active Players</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ total_matches }}</div>
+        <div class="stat-label">Matches Tracked</div>
+    </div>
+</div>
+
+<div class="text-center" style="margin: 2rem 0 3rem;">
+    <a href="{{ url_for('league_matches') }}" class="btn btn-secondary">View League Match History</a>
+</div>
+
+<div class="section">
+    <div class="section-header">
+        <h2>Recent Teams</h2>
+        <a href="{{ url_for('teams_list') }}" class="btn btn-ghost">View All →</a>
+    </div>
+    {% if teams %}
+        <div class="teams-grid">
+            {% for team in teams %}
+                <a href="{{ url_for('team_detail', team_id=team.id) }}" class="team-card">
+                    <h3>{{ team.name }}</h3>
+                    <p>{{ team.players|length }} players</p>
+                </a>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <h2>No Teams Yet</h2>
+            <p>Be the first to register your team and start tracking!</p>
+            <a href="{{ url_for('signup') }}" class="btn btn-primary">Register Team</a>
+        </div>
+    {% endif %}
+</div>
+
+<div class="section">
+    <h2>How It Works</h2>
+    <div class="steps">
+        <div class="step">
+            <div class="step-number">1</div>
+            <h3>Register Your Team</h3>
+            <p>Add your team name and player Riot IDs to get started</p>
+        </div>
+        <div class="step">
+            <div class="step-number">2</div>
+            <h3>Automatic Tracking</h3>
+            <p>We automatically collect match data for all your players</p>
+        </div>
+        <div class="step">
+            <div class="step-number">3</div>
+            <h3>View Statistics</h3>
+            <p>Track wins, losses, KDA, and detailed performance metrics</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

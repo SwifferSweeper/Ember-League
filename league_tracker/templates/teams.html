@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}Teams - League Tracker{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Registered Teams</h1>
+    <a href="{{ url_for('signup') }}" class="btn btn-primary">Register New Team</a>
+</div>
+
+{% if teams %}
+    <div class="teams-list">
+        {% for team in teams %}
+            <a href="{{ url_for('team_detail', team_id=team.id) }}" class="team-card-large">
+                <div class="team-info">
+                    <h2>{{ team.name }}</h2>
+                    <p class="player-count">{{ team.players|length }} players</p>
+                </div>
+                <div class="team-roster">
+                    {% for player in team.players[:5] %}
+                        <span class="player-tag">{{ player.display_name }}</span>
+                    {% endfor %}
+                    {% if team.players|length > 5 %}
+                        <span class="player-tag more">+{{ team.players|length - 5 }} more</span>
+                    {% endif %}
+                </div>
+            </a>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="empty-state">
+        <h2>No Teams Yet</h2>
+        <p>Be the first to register your team and start tracking matches!</p>
+        <a href="{{ url_for('signup') }}" class="btn btn-primary">Register Team</a>
+    </div>
+{% endif %}
+{% endblock %}

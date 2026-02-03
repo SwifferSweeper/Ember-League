@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}Tournament Codes - League Tracker{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <h1>Tournament Codes</h1>
+            <p class="text-muted">Track tournament codes to automatically detect when your teams play in tournaments.</p>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Add Tournament Code</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('admin_add_tournament_code') }}">
+                        <div class="mb-3">
+                            <label for="code" class="form-label">Tournament Code</label>
+                            <input type="text" class="form-control" id="code" name="code" required 
+                                   placeholder="Enter tournament code">
+                        </div>
+                        <div class="mb-3">
+                            <label for="tournament_name" class="form-label">Tournament Name (Optional)</label>
+                            <input type="text" class="form-control" id="tournament_name" name="tournament_name"
+                                   placeholder="e.g., Summer Championship 2024">
+                        </div>
+                        <div class="mb-3">
+                            <label for="team_id" class="form-label">Team (Optional)</label>
+                            <select class="form-select" id="team_id" name="team_id">
+                                <option value="">-- Select Team --</option>
+                                {% for team in teams %}
+                                <option value="{{ team.id }}">{{ team.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Add Tournament Code</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Registered Tournament Codes</h5>
+                </div>
+                <div class="card-body">
+                    {% if codes %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Code</th>
+                                    <th>Tournament</th>
+                                    <th>Team</th>
+                                    <th>Used</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for tc in codes %}
+                                <tr>
+                                    <td><code>{{ tc.code }}</code></td>
+                                    <td>{{ tc.tournament_name or '-' }}</td>
+                                    <td>{{ tc.team.name if tc.team else '-' }}</td>
+                                    <td>
+                                        {% if tc.is_used %}
+                                        <span class="badge bg-success">Yes</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">No</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ tc.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                    <td>
+                                        <form method="POST" 
+                                              action="{{ url_for('admin_delete_tournament_code', code_id=tc.id) }}"
+                                              style="display: inline;">
+                                            <button type="submit" class="btn btn-sm btn-danger"
+                                                    onclick="return confirm('Delete this tournament code?')">
+                                                Delete
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center py-4">No tournament codes registered yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="alert alert-info">
+                <h5>How It Works</h5>
+                <ul class="mb-0">
+                    <li>The system automatically polls for tournament matches every 5 minutes</li>
+                    <li>Tournament codes are used to identify which matches belong to which tournament</li>
+                    <li>When a match is detected, it will be recorded and associated with the team if applicable</li>
+                    <li>You can disable auto-collection by setting <code>AUTO_COLLECT_ENABLED=False</code> in config</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

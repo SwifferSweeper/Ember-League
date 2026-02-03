@@ -1,0 +1,5 @@
+flask>=2.3.0
+flask-sqlalchemy>=3.0.0
+riotwatcher>=3.2.5
+python-dotenv>=1.0.0
+apscheduler>=3.10.0

@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+
+{% block title %}{{ team.name }} - League Tracker{% endblock %}
+
+{% block content %}
+<div class="team-header">
+    <div class="team-info">
+        <h1>{{ team.name }}</h1>
+        <p class="team-meta">Registered: {{ team.created_at.strftime('%B %d, %Y') }}</p>
+    </div>
+    <div class="team-actions">
+        <form action="{{ url_for('api_collect_team_matches', team_id=team.id) }}" method="POST" class="collect-form">
+            <button type="submit" class="btn btn-primary">Collect Matches</button>
+        </form>
+    </div>
+</div>
+
+{% if stats and stats.total_games > 0 %}
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-number">{{ stats.total_games }}</div>
+        <div class="stat-label">Total Games</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number" style="color: var(--success);">{{ stats.wins }}</div>
+        <div class="stat-label">Wins</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number" style="color: var(--error);">{{ stats.losses }}</div>
+        <div class="stat-label">Losses</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ stats.win_rate }}%</div>
+        <div class="stat-label">Win Rate</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ stats.avg_kda }}</div>
+        <div class="stat-label">Avg KDA</div>
+    </div>
+</div>
+{% endif %}
+
+<div class="section">
+    <div class="section-header">
+        <h2>Roster</h2>
+    </div>
+    <div class="players-grid">
+        {% for player in team.players %}
+            <div class="player-card">
+                <div class="player-name">{{ player.display_name }}</div>
+                <div class="player-region">{{ player.region.upper() }}</div>
+                {% if player.puuid %}
+                <a href="{{ url_for('player_league_history', puuid=player.puuid) }}" class="btn btn-secondary" style="margin-top: 0.75rem; font-size: 0.85rem; padding: 0.4rem 0.75rem;">
+                    League History
+                </a>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="section">
+    <h2>Recent Matches</h2>
+    {% if recent_matches %}
+        <div class="matches-list">
+            {% for match in recent_matches %}
+                <div class="match-card {{ 'win' if match.win else 'loss' }}">
+                    <div class="match-result">
+                        <span class="result-badge {{ 'win' if match.win else 'loss' }}">
+                            {{ 'VICTORY' if match.win else 'DEFEAT' }}
+                        </span>
+                    </div>
+                    <div class="match-info">
+                        <span class="match-time">{{ format_timestamp(match.game_creation) }}</span>
+                        <span class="match-duration">{{ format_duration(match.game_duration) }}</span>
+                    </div>
+                    <div class="match-players">
+                        {% for p in match.team_players[:5] %}
+                            <span class="player-chip">{{ p.champion_name }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <h2>No Matches Yet</h2>
+            <p>Click "Collect Matches" to fetch match data from Riot API.</p>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+.team-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+}
+
+.matches-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.match-card {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1.25rem 1.5rem;
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+    border-left: 4px solid var(--border-color);
+    transition: all var(--transition-normal);
+}
+
+.match-card:hover {
+    transform: translateX(4px);
+    border-color: var(--accent-primary);
+}
+
+.match-card.win {
+    border-left-color: var(--success);
+}
+
+.match-card.loss {
+    border-left-color: var(--error);
+}
+
+.result-badge {
+    padding: 0.375rem 0.875rem;
+    border-radius: var(--radius-sm);
+    font-weight: 700;
+    font-size: 0.8rem;
+    letter-spacing: 0.5px;
+    min-width: 80px;
+    text-align: center;
+}
+
+.result-badge.win {
+    background: rgba(63, 185, 80, 0.2);
+    color: var(--success);
+}
+
+.result-badge.loss {
+    background: rgba(248, 81, 73, 0.2);
+    color: var(--error);
+}
+
+.match-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 140px;
+    gap: 0.25rem;
+}
+
+.match-time {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.match-duration {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.match-players {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    flex: 1;
+}
+
+.player-chip {
+    background: var(--bg-tertiary);
+    padding: 0.3rem 0.6rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.collect-form {
+    display: inline-block;
+}
+
+@media (max-width: 768px) {
+    .team-header {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .match-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .match-info {
+        flex-direction: row;
+        gap: 1rem;
+    }
+}
+</style>
+{% endblock %}
