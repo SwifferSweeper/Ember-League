@@ -27,9 +27,9 @@ class StatsCalculator:
         if not participants:
             return {}
         
-        total_kills = sum(p.kills for p in participants)
-        total_deaths = sum(p.deaths for p in participants)
-        total_assists = sum(p.assists for p in participants)
+        total_kills = sum(p.kills or 0 for p in participants)
+        total_deaths = sum(p.deaths or 0 for p in participants)
+        total_assists = sum(p.assists or 0 for p in participants)
         total_games = len(participants)
         wins = sum(1 for p in participants if p.win)
         
@@ -45,9 +45,9 @@ class StatsCalculator:
             'avg_deaths': round(total_deaths / total_games, 2) if total_games > 0 else 0,
             'avg_assists': round(total_assists / total_games, 2) if total_games > 0 else 0,
             'avg_kda': round((total_kills + total_assists) / total_deaths, 2) if total_deaths > 0 else float(total_kills + total_assists),
-            'total_gold': sum(p.gold_earned for p in participants),
-            'avg_cs': round(sum(p.cs for p in participants) / total_games, 1) if total_games > 0 else 0,
-            'total_vision': sum(p.vision_score for p in participants),
+            'total_gold': sum(p.gold_earned or 0 for p in participants),
+            'avg_cs': round(sum(p.cs or 0 for p in participants) / total_games, 1) if total_games > 0 else 0,
+            'total_vision': sum(p.vision_score or 0 for p in participants),
         }
     
     @staticmethod

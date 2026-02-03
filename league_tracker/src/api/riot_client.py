@@ -23,9 +23,14 @@ class RiotClient:
     """Client for interacting with Riot Games API using requests."""
     
     def __init__(self, api_key: str = None):
-        self.api_key = api_key or RIOT_API_KEY
+        # If api_key is explicitly provided (even as empty string), use it
+        # Otherwise, fall back to RIOT_API_KEY from config
+        if api_key is not None:
+            self.api_key = api_key
+        else:
+            self.api_key = RIOT_API_KEY
         
-        if not validate_api_key():
+        if not self.api_key or self.api_key == "":
             raise RiotAPIError("Riot API key is required. Set RIOT_API_KEY environment variable.")
         
         logger.info("RiotClient initialized with requests")

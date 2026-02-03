@@ -35,7 +35,8 @@ class MatchCollector:
         except RiotAPIError:
             logger.warning("Riot API client could not be initialized")
     
-    def calculate_kda(self, kills: int, deaths: int, assists: int) -> float:
+    @staticmethod
+    def calculate_kda(kills: int, deaths: int, assists: int) -> float:
         """Calculate KDA ratio."""
         if deaths == 0:
             return float(kills + assists)
@@ -56,7 +57,7 @@ class MatchCollector:
             'kills': kills,
             'deaths': deaths,
             'assists': assists,
-            'kda': self.calculate_kda(kills, deaths, assists),
+            'kda': MatchCollector.calculate_kda(kills, deaths, assists),
             'total_damage_dealt': participant.get('totalDamageDealtToChampions', 0),
             'gold_earned': participant.get('goldEarned', 0),
             'cs': participant.get('totalMinionsKilled', 0) + participant.get('neutralMinionsKilled', 0),

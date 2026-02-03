@@ -1,26 +1,26 @@
 {% extends "base.html" %}
 
-{% block title %}Draft History: {{ session.name }} - League Tracker{% endblock %}
+{% block title %}Draft History: {{ draft_session.name }} - League Tracker{% endblock %}
 
 {% block content %}
 <div class="container">
     <div class="page-header">
-        <h1>Draft History: {{ session.name }}</h1>
-        <a href="{{ url_for('draft_view', session_id=session.id) }}" class="btn btn-primary">Back to Draft</a>
+        <h1>Draft History: {{ draft_session.name }}</h1>
+        <a href="{{ url_for('draft_view', session_id=draft_session.id) }}" class="btn btn-primary">Back to Draft</a>
     </div>
 
     <div class="draft-summary">
         <div class="summary-item">
             <span class="label">Mode:</span>
-            <span class="badge badge-{{ session.draft_mode }}">{{ session.draft_mode|capitalize }}</span>
+            <span class="badge badge-{{ draft_session.draft_mode }}">{{ draft_session.draft_mode|capitalize }}</span>
         </div>
         <div class="summary-item">
             <span class="label">Teams:</span>
-            <span>{{ session.team_blue.name if session.team_blue else 'TBD' }} vs {{ session.team_red.name if session.team_red else 'TBD' }}</span>
+            <span>{{ draft_session.team_blue.name if draft_session.team_blue else 'TBD' }} vs {{ draft_session.team_red.name if draft_session.team_red else 'TBD' }}</span>
         </div>
         <div class="summary-item">
             <span class="label">Status:</span>
-            <span>{{ 'Completed' if not session.is_active else 'In Progress' }}</span>
+            <span>{{ 'Completed' if not draft_session.is_active else 'In Progress' }}</span>
         </div>
     </div>
 
@@ -37,7 +37,7 @@
 {% set ns = namespace(champion_name='') %}
                 <div class="game-bans">
                     <div class="bans-team blue">
-                        <h4>{{ session.team_blue.name if session.team_blue else 'Blue' }} Bans</h4>
+                        <h4>{{ draft_session.team_blue.name if draft_session.team_blue else 'Blue' }} Bans</h4>
                         <div class="ban-icons">
                             {% for champion_id in game.bans_blue %}
                                 {% set cid = champion_id|string %}
@@ -50,7 +50,7 @@
                         </div>
                     </div>
                     <div class="bans-team red">
-                        <h4>{{ session.team_red.name if session.team_red else 'Red' }} Bans</h4>
+                        <h4>{{ draft_session.team_red.name if draft_session.team_red else 'Red' }} Bans</h4>
                         <div class="ban-icons">
                             {% for champion_id in game.bans_red %}
                                 {% set cid = champion_id|string %}
@@ -66,7 +66,7 @@
 
                 <div class="game-picks">
                     <div class="picks-team blue">
-                        <h4>{{ session.team_blue.name if session.team_blue else 'Blue' }} Picks</h4>
+                        <h4>{{ draft_session.team_blue.name if draft_session.team_blue else 'Blue' }} Picks</h4>
                         <div class="pick-list">
                             {% for pick in game.picks_blue %}
                                 {% set cid = pick.champion_id|string %}
@@ -81,7 +81,7 @@
                         </div>
                     </div>
                     <div class="picks-team red">
-                        <h4>{{ session.team_red.name if session.team_red else 'Red' }} Picks</h4>
+                        <h4>{{ draft_session.team_red.name if draft_session.team_red else 'Red' }} Picks</h4>
                         <div class="pick-list">
                             {% for pick in game.picks_red %}
                                 {% set cid = pick.champion_id|string %}
@@ -127,3 +127,4 @@
         {% endfor %}
     </div>
 </div>
+{% endblock %}

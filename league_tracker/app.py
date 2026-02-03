@@ -811,13 +811,13 @@ def create_app():
     @app.route('/draft/<int:session_id>/history')
     def draft_history(session_id):
         """View the complete history of a draft series."""
-        session = DraftSession.query.get_or_404(session_id)
+        draft_session = DraftSession.query.get_or_404(session_id)
         history = DraftSessionManager.get_series_history(session_id)
         
         # Convert CHAMPIONS dict to use integer keys for proper lookup
         champion_names = {k: v for k, v in CHAMPIONS.items()}
         
-        return render_template('draft_history.html', session=session, history=history, champion_names=champion_names)
+        return render_template('draft_history.html', draft_session=draft_session, history=history, champion_names=champion_names)
     
     # Draft API endpoints
     

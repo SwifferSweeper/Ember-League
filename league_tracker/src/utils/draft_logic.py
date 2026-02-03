@@ -117,8 +117,12 @@ class DraftModeValidator:
         bans_blue = self.game.bans_blue or []
         bans_red = self.game.bans_red or []
         
+        # Extract champion_ids from pick dicts (picks are dicts with 'champion_id' key)
+        pick_ids_blue = [p['champion_id'] if isinstance(p, dict) else p for p in picks_blue]
+        pick_ids_red = [p['champion_id'] if isinstance(p, dict) else p for p in picks_red]
+        
         # Check if champion_id is already taken (in bans or picks)
-        all_taken = picks_blue + picks_red + bans_blue + bans_red
+        all_taken = pick_ids_blue + pick_ids_red + bans_blue + bans_red
         return champion_id not in all_taken
     
     def _can_pick_fearless(self, champion_id):
@@ -159,12 +163,16 @@ class DraftModeValidator:
         """Get available champions for normal mode."""
         from .champions import get_all_champions, CHAMPIONS
         
-        picks_blue = set(self.game.picks_blue or [])
-        picks_red = set(self.game.picks_red or [])
-        bans_blue = set(self.game.bans_blue or [])
-        bans_red = set(self.game.bans_red or [])
+        picks_blue = self.game.picks_blue or []
+        picks_red = self.game.picks_red or []
+        bans_blue = self.game.bans_blue or []
+        bans_red = self.game.bans_red or []
         
-        taken = picks_blue | picks_red | bans_blue | bans_red
+        # Extract champion_ids from pick dicts (picks are dicts with 'champion_id' key)
+        pick_ids_blue = {p['champion_id'] if isinstance(p, dict) else p for p in picks_blue}
+        pick_ids_red = {p['champion_id'] if isinstance(p, dict) else p for p in picks_red}
+        
+        taken = pick_ids_blue | pick_ids_red | set(bans_blue) | set(bans_red)
         
         return [c for c in get_all_champions() if c['id'] not in taken]
     
