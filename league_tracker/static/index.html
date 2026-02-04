@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>League Tracker - Cloudflare Workers</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .api-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .api-section h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .api-section code {
+            background: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .test-results {
+            margin-top: 20px;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: left;
+        }
+
+        .test-results h4 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .result-item {
+            padding: 8px 0;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .result-item:last-child {
+            border-bottom: none;
+        }
+
+        .result-item strong {
+            color: #333;
+        }
+
+        .result-item.success {
+            color: #28a745;
+        }
+
+        .result-item.error {
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>League Tracker</h1>
+        <p class="subtitle">Cloudflare Workers + Pages</p>
+
+        <div class="api-section">
+            <h3>API Endpoints</h3>
+            <div class="result-item">
+                <strong>Teams:</strong> <code>/api/teams</code>
+            </div>
+            <div class="result-item">
+                <strong>Players:</strong> <code>/api/players</code>
+            </div>
+            <div class="result-item">
+                <strong>Matches:</strong> <code>/api/matches</code>
+            </div>
+            <div class="result-item">
+                <strong>Collect Matches:</strong> <code>POST /api/collect</code>
+            </div>
+            <div class="result-item">
+                <strong>Admin Login:</strong> <code>POST /api/admin/login</code>
+            </div>
+        </div>
+
+        <button class="btn" onclick="testAPI()">Test API</button>
+
+        <div id="status" class="status"></div>
+
+        <div id="testResults" class="test-results" style="display: none;">
+            <h4>Test Results</h4>
+            <div id="results"></div>
+        </div>
+    </div>
+
+    <script>
+        async function testAPI() {
+            const status = document.getElementById('status');
+            const testResults = document.getElementById('testResults');
+            const results = document.getElementById('results');
+            
+            status.className = 'status info';
+            status.textContent = 'Testing API...';
+            testResults.style.display = 'none';
+            
+            try {
+                const tests = [
+                    {
+                        name: 'Get Teams',
+                        url: '/api/teams',
+                        method: 'GET'
+                    },
+                    {
+                        name: 'Get Players',
+                        url: '/api/players',
+                        method: 'GET'
+                    },
+                    {
+                        name: 'Get Matches',
+                        url: '/api/matches',
+                        method: 'GET'
+                    },
+                    {
+                        name: 'Admin Login',
+                        url: '/api/admin/login',
+                        method: 'POST',
+                        body: JSON.stringify({
+                            username: 'admin',
+                            password: 'admin123'
+                        })
+                    }
+                ];
+
+                const resultsHTML = [];
+                
+                for (const test of tests) {
+                    try {
+                        const response = await fetch(test.url, {
+                            method: test.method,
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: test.body || null
+                        });
+                        
+                        const data = await response.json();
+                        
+                        resultsHTML.push(`
+                            <div class="result-item success">
+                                <strong>${test.name}:</strong> Success (${response.status})
+                            </div>
+                        `);
+                        
+                    } catch (error) {
+                        resultsHTML.push(`
+                            <div class="result-item error">
+                                <strong>${test.name}:</strong> Error - ${error.message}
+                            </div>
+                        `);
+                    }
+                }
+
+                results.innerHTML = resultsHTML.join('');
+                testResults.style.display = 'block';
+                status.className = 'status success';
+                status.textContent = 'API Tests Complete!';
+                
+            } catch (error) {
+                status.className = 'status error';
+                status.textContent = `API Test Failed: ${error.message}`;
+            }
+        }
+
+        // Check if we're running on Cloudflare Pages
+        if (window.location.hostname.includes('workers.dev')) {
+            document.getElementById('status').className = 'status info';
+            document.getElementById('status').textContent = 'Running on Cloudflare Workers!';
+        }
+    </script>
+</body>
+</html>
