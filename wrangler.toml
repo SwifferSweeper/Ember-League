@@ -6,11 +6,6 @@ main = "worker/index.py"
 compatibility_date = "2026-02-04"
 compatibility_flags = ["python_workers"]
 
-
-# Node.js compatibility for dependencies
-[build]
-command = "npm install"
-
 # Environment variables (secrets should be set via wrangler secret)
 [vars]
 DEBUG = "false"
