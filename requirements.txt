@@ -1,9 +1,36 @@
+# League Tracker - Railway Deployment Requirements
+# This file is used by Railway for deployment
+
+# Core Flask dependencies
 flask>=2.3.0
 flask-sqlalchemy>=3.0.0
-riotwatcher>=3.2.5
+werkzeug>=2.3.0
+
+# API and utilities
 python-dotenv>=1.0.0
+requests>=2.31.0
+urllib3>=2.0.0
+
+# Riot Games API
+riotwatcher>=3.2.5
+
+# Database dependencies
+sqlalchemy>=2.0.0
+psycopg2-binary>=2.9.0  # PostgreSQL adapter for Railway
+
+# Background task scheduling
 apscheduler>=3.10.0
+
+# Web server for production
 gunicorn>=21.0.0
-psycopg2-binary>=2.9.0
-SQLAlchemy>=2.0.0
-requests
+
+# Testing dependencies (not needed for production but included for completeness)
+pytest>=7.4.0
+pytest-cov>=4.1.0
+pytest-flask>=1.2.0
+pytest-mock>=3.11.0
+responses>=0.23.0
+freezegun>=1.2.0
+
+# Linting and formatting
+ruff>=0.1.0

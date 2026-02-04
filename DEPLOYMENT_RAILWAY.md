@@ -95,12 +95,17 @@ In the Railway dashboard, go to your service's "Variables" tab and add:
 
 ### 5. Deploy
 
-1. Railway will:
-   - Detect Python from `requirements.txt`
-   - Execute `start.sh` which installs dependencies and runs gunicorn
-   - Start the web server on port $PORT
-2. If deployment fails, check the logs in Railway dashboard
-3. If files aren't found, verify Root Directory is empty/root in Settings
+Railway will:
+1. Detect Python from `requirements.txt`
+2. Execute the `Procfile` command which runs gunicorn
+3. Start the web server on port $PORT
+4. If deployment fails, check the logs in Railway dashboard
+5. If files aren't found, verify Root Directory is empty/root in Settings
+
+The Procfile command:
+```
+web: gunicorn --bind 0.0.0.0:$PORT league_tracker.app:app --workers 4 --threads 4 --timeout 120
+```
 
 ### 6. Access Your App
 

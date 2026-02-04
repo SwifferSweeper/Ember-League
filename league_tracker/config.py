@@ -42,3 +42,11 @@ else:
     SQLALCHEMY_ENGINE_OPTIONS = {}
 
 SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+# Auto-collect configuration
+AUTO_COLLECT_ENABLED = os.getenv("AUTO_COLLECT_ENABLED", "True").lower() == "true"
+AUTO_COLLECT_INTERVAL = int(os.getenv("AUTO_COLLECT_INTERVAL", "5"))
+
+def validate_api_key():
+    """Validate the Riot API key."""
+    return bool(RIOT_API_KEY and RIOT_API_KEY != "")
