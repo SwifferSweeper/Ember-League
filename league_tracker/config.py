@@ -50,3 +50,6 @@ AUTO_COLLECT_INTERVAL = int(os.getenv("AUTO_COLLECT_INTERVAL", "5"))
 def validate_api_key():
     """Validate the Riot API key."""
     return bool(RIOT_API_KEY and RIOT_API_KEY != "")
+
+# Tournament queue ID for match collection (None = all queues, or set to specific queue ID)
+TOURNAMENT_QUEUE_ID = None  # Set to int queue ID like 0 for custom games, or None for all

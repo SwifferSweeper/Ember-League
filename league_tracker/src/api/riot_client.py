@@ -9,7 +9,7 @@ import requests
 import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-from config import RIOT_API_KEY, REGIONAL_ROUTING, validate_api_key
+from config import RIOT_API_KEY, validate_api_key
 
 logger = logging.getLogger(__name__)
 

@@ -12,8 +12,8 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from config import TOURNAMENT_QUEUE_ID
-from src.database import db, Team, Player, Match, MatchParticipant
-from src.api.riot_client import RiotClient, RiotAPIError
+from league_tracker.src.database import db, Team, Player, Match, MatchParticipant
+from league_tracker.src.api.riot_client import RiotClient, RiotAPIError
 
 logger = logging.getLogger(__name__)
 
