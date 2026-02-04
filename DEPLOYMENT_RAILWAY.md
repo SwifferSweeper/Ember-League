@@ -97,12 +97,15 @@ In the Railway dashboard, go to your service's "Variables" tab and add:
 
 Railway will:
 1. Detect Python from `requirements.txt`
-2. Execute the `Procfile` command which runs gunicorn
+2. Use `railway.json` or `Procfile` for the start command
 3. Start the web server on port $PORT
 4. If deployment fails, check the logs in Railway dashboard
-5. If files aren't found, verify Root Directory is empty/root in Settings
 
-The Procfile command:
+**Important:** In Railway dashboard settings, ensure:
+- Root Directory is empty or set to `./`
+- If you selected the wrong directory initially, redeploy with correct settings
+
+The deployment uses:
 ```
 web: gunicorn --bind 0.0.0.0:$PORT league_tracker.app:app --workers 4 --threads 4 --timeout 120
 ```
@@ -225,6 +228,33 @@ AUTO_COLLECT_INTERVAL=5
 1. Verify `DATABASE_URL` is set correctly
 2. Check if database service is running
 3. Try restarting the service
+
+### "No module named 'app'" Error
+
+This usually means Railway is deploying from the wrong directory:
+
+1. Go to Railway dashboard → Your service → Settings
+2. Find "Root Directory" or "Build Path"
+3. Set it to empty (deploy from root) or `./`
+4. **Do NOT** set it to `league_tracker`
+5. Redeploy your service
+
+### "No module named 'league_tracker'" Error
+
+This means the PYTHONPATH is not set correctly:
+
+1. Ensure `railway.json` is in the project root
+2. Verify the project structure:
+   ```
+   /project-root/
+   ├── railway.json
+   ├── Procfile
+   ├── requirements.txt
+   └── league_tracker/
+       ├── app.py
+       └── ...
+   ```
+3. Redeploy after ensuring correct structure
 
 ### CORS Errors
 

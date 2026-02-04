@@ -1,1 +1,1 @@
-web: gunicorn --bind 0.0.0.0:$PORT league_tracker.app:app --workers 4 --threads 4 --timeout 120
+web: PYTHONPATH=/app:$PYTHONPATH gunicorn --bind 0.0.0.0:$PORT league_tracker.app:app --workers 4 --threads 4 --timeout 120
