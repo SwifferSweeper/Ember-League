@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>League Tracker - Home</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">League Tracker</div>
+        <div class="nav-links">
+            <a href="index.html" class="active">Home</a>
+            <a href="teams.html">Teams</a>
+            <a href="matches.html">Matches</a>
+            <a href="leaderboards.html">Leaderboards</a>
+            <a href="draft.html">Draft Tool</a>
+        </div>
+    </nav>
+
+    <main class="container">
+        <section class="hero">
+            <h1>League of Legends League Tracker</h1>
+            <p>Track your team matches, stats, and draft sessions</p>
+        </section>
+
+        <section class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" id="total-teams">-</div>
+                <div class="stat-label">Teams</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="total-players">-</div>
+                <div class="stat-label">Players</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="total-matches">-</div>
+                <div class="stat-label">Matches</div>
+            </div>
+        </section>
+
+        <section class="recent-section">
+            <h2>Recent Teams</h2>
+            <div id="recent-teams" class="teams-list">
+                <!-- Recent teams will be loaded here -->
+            </div>
+        </section>
+
+        <section class="quick-actions">
+            <h2>Quick Actions</h2>
+            <div class="actions-grid">
+                <a href="teams.html" class="action-card">
+                    <span class="action-icon">👥</span>
+                    <span class="action-title">View All Teams</span>
+                </a>
+                <a href="matches.html" class="action-card">
+                    <span class="action-icon">⚔️</span>
+                    <span class="action-title">Match History</span>
+                </a>
+                <a href="leaderboards.html" class="action-card">
+                    <span class="action-icon">🏆</span>
+                    <span class="action-title">Leaderboards</span>
+                </a>
+                <a href="draft.html" class="action-card">
+                    <span class="action-icon">📋</span>
+                    <span class="action-title">Draft Tool</span>
+                </a>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <p>League Tracker - Powered by Riot Games API</p>
+    </footer>
+
+    <script src="api.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,45 @@
+name: Database and Scheduled Tasks
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'  # Every 5 minutes
+  workflow_dispatch:
+
+jobs:
+  database:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: true
+        fetch-depth: 0
+
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r league_tracker/requirements.txt
+
+    - name: Setup SQLite database
+      run: |
+        cd league_tracker
+        python -c "
+import os
+from pathlib import Path
+from league_tracker.config import DATABASE_PATH
+
+# Create data directory
+Path(DATABASE_PATH).parent.mkdir(exist_ok=True)
+print(f'Database will be stored at: {DATABASE_PATH}')
+"
+
+    - name: Run scheduled tasks
+      run: |
+        cd league_tracker
+        python scheduled_tasks.py

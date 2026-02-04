@@ -1,0 +1,21 @@
+{
+  "name": "league-tracker-frontend",
+  "version": "1.0.0",
+  "description": "League of Legends League Tracker - Frontend for GitHub Pages",
+  "scripts": {
+    "dev": "serve .",
+    "build": "echo 'No build step required for static files'",
+    "test": "echo 'No tests configured'",
+    "lint": "echo 'No linter configured'"
+  },
+  "keywords": [
+    "league-of-legends",
+    "tracker",
+    "draft-tool"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "serve": "^14.2.0"
+  }
+}
