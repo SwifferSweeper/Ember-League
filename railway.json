@@ -10,6 +10,5 @@
     "startCommand": "gunicorn --bind 0.0.0.0:$PORT app:app",
     "healthcheckPath": "/",
     "restartPolicy": "always"
-  },
-  "environments": ["production", "development"]
+  }
 }
