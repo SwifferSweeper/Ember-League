@@ -9,14 +9,15 @@ import atexit
 # Add src to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
-from config import SECRET_KEY, DEBUG, SQLALCHEMY_DATABASE_URI, SQLALCHEMY_TRACK_MODIFICATIONS, \
+# Import config using absolute import for gunicorn compatibility
+from league_tracker.config import SECRET_KEY, DEBUG, SQLALCHEMY_DATABASE_URI, SQLALCHEMY_TRACK_MODIFICATIONS, \
                    RIOT_API_KEY, validate_api_key, AUTO_COLLECT_ENABLED, AUTO_COLLECT_INTERVAL
-from src.database import db, Team, Player, Match, MatchParticipant, Admin, team_players, TournamentCode, DraftSession, DraftGame, DraftStep
-from src.api.riot_client import RiotClient, RiotAPIError
-from src.api.match_collector import MatchCollector, run_collect
-from src.utils.stats_calculator import StatsCalculator
-from src.utils.champions import get_all_champions, get_champion_by_id, get_champion_name, CHAMPIONS
-from src.utils.draft_logic import DraftSessionManager, DraftModeValidator
+from league_tracker.src.database import db, Team, Player, Match, MatchParticipant, Admin, team_players, TournamentCode, DraftSession, DraftGame, DraftStep
+from league_tracker.src.api.riot_client import RiotClient, RiotAPIError
+from league_tracker.src.api.match_collector import MatchCollector, run_collect
+from league_tracker.src.utils.stats_calculator import StatsCalculator
+from league_tracker.src.utils.champions import get_all_champions, get_champion_by_id, get_champion_name, CHAMPIONS
+from league_tracker.src.utils.draft_logic import DraftSessionManager, DraftModeValidator
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

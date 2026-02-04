@@ -10,8 +10,8 @@ from pathlib import Path
 import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from app import create_app
-from src.database import db, Team, Player, Match, MatchParticipant, Admin, DraftSession, DraftGame
+from league_tracker.app import create_app
+from league_tracker.src.database import db, Team, Player, Match, MatchParticipant, Admin, DraftSession, DraftGame
 
 
 @pytest.fixture(scope='function')
