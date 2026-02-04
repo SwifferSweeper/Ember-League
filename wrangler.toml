@@ -4,6 +4,8 @@
 name = "league-tracker-workers"
 main = "worker/index.py"
 compatibility_date = "2026-02-04"
+compatibility_flags = ["python_workers"]
+
 
 # Node.js compatibility for dependencies
 [build]
