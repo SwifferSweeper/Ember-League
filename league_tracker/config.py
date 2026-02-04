@@ -7,11 +7,6 @@ import os
 from pathlib import Path
 from urllib.parse import urlparse
 
-# Load environment variables from .env file
-from dotenv import load_dotenv
-env_path = Path(__file__).resolve().parent / ".env"
-load_dotenv(dotenv_path=env_path)
-
 # Project paths
 BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR / "data"
@@ -20,6 +15,8 @@ DATA_DIR.mkdir(exist_ok=True)
 DATABASE_PATH = DATA_DIR / "league.db"
 
 # Flask configuration
+# Note: Environment variables take precedence over .env file
+# Railway dashboard variables are set as environment variables
 SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key-change-in-production")
 DEBUG = os.getenv("DEBUG", "False").lower() == "true"
 
@@ -27,7 +24,7 @@ DEBUG = os.getenv("DEBUG", "False").lower() == "true"
 RIOT_API_KEY = os.getenv("RIOT_API_KEY", "")
 
 # Database configuration
-# Railway provides DATABASE_URL for PostgreSQL
+# Railway provides DATABASE_URL for PostgreSQL as environment variable
 # For local development, use SQLite
 DATABASE_URL = os.getenv("DATABASE_URL", "")
 
