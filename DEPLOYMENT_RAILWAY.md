@@ -58,7 +58,7 @@ If Railway doesn't auto-detect the correct directory, you have two options:
 1. Go to your service in Railway dashboard
 2. Click "Settings"
 3. Find "Root Directory" or "Build Path"
-4. Set it to empty (deploy from root) or `./`
+4. Set it to **empty** (this is the recommended approach)
 5. Click "Save"
 6. Redeploy
 
@@ -97,12 +97,20 @@ In the Railway dashboard, go to your service's "Variables" tab and add:
 
 Railway will:
 1. Detect Python from `requirements.txt`
-2. Use `railway.json` or `Procfile` for the start command
+2. Use `Procfile` for the start command
 3. Start the web server on port $PORT
 4. If deployment fails, check the logs in Railway dashboard
 
+**Important:** After pushing changes:
+1. Go to Railway dashboard
+2. Click "Deploy" (or "Redeploy") to pull the latest changes
+3. If still failing, try clearing the Railway cache:
+   - Go to Settings → General
+   - Click "Clear Build Cache"
+   - Redeploy again
+
 **Important:** In Railway dashboard settings, ensure:
-- Root Directory is empty or set to `./`
+- Root Directory is **empty** (this is the recommended approach)
 - If you selected the wrong directory initially, redeploy with correct settings
 
 The deployment uses:
@@ -231,13 +239,17 @@ AUTO_COLLECT_INTERVAL=5
 
 ### "No module named 'app'" Error
 
-This usually means Railway is deploying from the wrong directory:
+This usually means Railway is using a cached deployment:
 
 1. Go to Railway dashboard → Your service → Settings
-2. Find "Root Directory" or "Build Path"
-3. Set it to empty (deploy from root) or `./`
-4. **Do NOT** set it to `league_tracker`
-5. Redeploy your service
+2. Find "Clear Build Cache" or "Clear Cache"
+3. Click to clear the cache
+4. Redeploy your service
+
+Also ensure:
+- Root Directory is **empty**
+- You've pushed all changes to GitHub
+- Railway is deploying the correct branch
 
 ### "No module named 'league_tracker'" Error
 
