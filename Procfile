@@ -1,1 +1,1 @@
-web: bash -c "cd league_tracker && exec gunicorn --bind 0.0.0.0:$PORT app:app"
+web: gunicorn --bind 0.0.0.0:$PORT league_tracker.app:app -k uvicorn.workers.UvicornWorker

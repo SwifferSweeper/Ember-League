@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Change to the app directory using absolute path
-cd /app/league_tracker
+# Run gunicorn from the root of the repo
+cd /app
 
-# Run gunicorn from the league_tracker directory
-exec gunicorn --bind 0.0.0.0:$PORT app:app
+# Use full module path
+exec gunicorn --bind 0.0.0.0:$PORT league_tracker.app:app -k uvicorn.workers.UvicornWorker
