@@ -1,7 +1,7 @@
 # Wrangler Configuration for League Tracker
 # Cloudflare Workers deployment
 
-name = "league-tracker-workers"
+name = "ember-league"
 main = "worker/index.py"
 compatibility_date = "2026-02-04"
 compatibility_flags = ["python_workers"]
