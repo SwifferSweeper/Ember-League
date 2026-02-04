@@ -1,48 +1,71 @@
-name: Deploy to GitHub Pages
+name: Deploy Frontend to GitHub Pages
 
 on:
   push:
-    branches: [main, master]
+    branches: [main]
     paths:
       - 'frontend/**'
       - '.github/workflows/deploy-pages.yml'
-  workflow_dispatch:
-    inputs:
-      environment:
-        type: choice
-        description: Deployment environment
-        required: true
-        default: 'production'
-        options:
-          - production
-          - staging
+  pull_request:
+    branches: [main]
+    paths:
+      - 'frontend/**'
 
+# Sets permissions for the GITHUB_TOKEN
 permissions:
   contents: read
   pages: write
   id-token: write
 
+# Allow only one concurrent deployment
 concurrency:
-  group: "pages"
-  cancel-in-progress: false
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   deploy:
-    environment:
-      name: ${{ github.event.inputs.environment || 'production' }}
+    name: Deploy to GitHub Pages
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Validate static files
+        run: |
+          cd frontend
+          # Check that required files exist
+          test -f index.html || { echo "index.html not found"; exit 1; }
+          test -f app.js || { echo "app.js not found"; exit 1; }
+          test -f api.js || { echo "api.js not found"; exit 1; }
+
+      - name: Create _config.yml for Jekyll (optional)
+        run: |
+          echo "theme: jekyll-theme-minimal" > frontend/_config.yml
+          echo "plugins:" >> frontend/_config.yml
+          echo "  - jekyll-sitemap" >> frontend/_config.yml
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: 'frontend/'
+          path: frontend/
 
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Print deployment URL
+        run: |
+          echo "✅ Frontend deployed to: ${{ steps.deployment.outputs.page_url }}"

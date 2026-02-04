@@ -1058,4 +1058,8 @@ if __name__ == '__main__':
     # Start background scheduler (enabled by default via AUTO_COLLECT_ENABLED config)
     start_scheduler(app)
     
-    app.run(debug=DEBUG, host='0.0.0.0', port=5000)
+    # Get port from environment (Railway sets $PORT)
+    port = int(os.environ.get('PORT', 5000))
+    host = os.environ.get('HOST', '0.0.0.0')
+    
+    app.run(debug=DEBUG, host=host, port=port)

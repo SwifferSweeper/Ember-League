@@ -1,9 +1,11 @@
 """
 Configuration for League Tracker Flask application.
+Supports both local development and Railway deployment.
 """
 
 import os
 from pathlib import Path
+from urllib.parse import urlparse
 
 # Load environment variables from .env file
 from dotenv import load_dotenv
@@ -19,47 +21,24 @@ DATABASE_PATH = DATA_DIR / "league.db"
 
 # Flask configuration
 SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key-change-in-production")
-DEBUG = os.getenv("DEBUG", "True").lower() == "true"
+DEBUG = os.getenv("DEBUG", "False").lower() == "true"
 
 # Riot API Configuration
-RIOT_API_KEY = ""
+RIOT_API_KEY = os.getenv("RIOT_API_KEY", "")
 
-# Tournament queue ID (0 = custom games/tournament mode)
-# You can change this to filter specific queue types
-TOURNAMENT_QUEUE_ID = 0
+# Database configuration
+# Railway provides DATABASE_URL for PostgreSQL
+# For local development, use SQLite
+DATABASE_URL = os.getenv("DATABASE_URL", "")
 
-# Regional routing
-REGIONAL_ROUTING = {
-    "americas": "americas",
-    "europe": "europe",
-    "asia": "asia",
-    "sea": "sea",
-}
+if DATABASE_URL:
+    # Use PostgreSQL on Railway
+    SQLALCHEMY_DATABASE_URI = DATABASE_URL
+    # Disable foreign key constraints for SQLite compatibility
+    SQLALCHEMY_ENGINE_OPTIONS = {"isolation_level": "autocommit"}
+else:
+    # Use SQLite for local development
+    SQLALCHEMY_DATABASE_URI = f"sqlite:///{DATABASE_PATH}"
+    SQLALCHEMY_ENGINE_OPTIONS = {}
 
-# Supported regions
-SUPPORTED_REGIONS = ["na1", "euw1", "eun1", "kr", "jp1", "br1", "la1", "la2", "oc1", "tr1", "ru"]
-
-# Auto-collect matches in production (set to False to disable)
-AUTO_COLLECT_ENABLED = os.getenv("AUTO_COLLECT_ENABLED", "True").lower() == "true"
-AUTO_COLLECT_INTERVAL = int(os.getenv("AUTO_COLLECT_INTERVAL", "5"))  # minutes
-
-# Regional routing
-REGIONAL_ROUTING = {
-    "americas": "americas",
-    "europe": "europe",
-    "asia": "asia",
-    "sea": "sea",
-}
-
-# Supported regions
-SUPPORTED_REGIONS = ["na1", "euw1", "eun1", "kr", "jp1", "br1", "la1", "la2", "oc1", "tr1", "ru"]
-
-
-def validate_api_key() -> bool:
-    """Check if API key is configured."""
-    return bool(RIOT_API_KEY and RIOT_API_KEY != "")
-
-
-# Database URI
-SQLALCHEMY_DATABASE_URI = f"sqlite:///{DATABASE_PATH}"
 SQLALCHEMY_TRACK_MODIFICATIONS = False

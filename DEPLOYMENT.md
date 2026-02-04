@@ -1,123 +1,72 @@
 # Deployment Guide
 
-This document describes how to deploy the League Tracker application using GitHub Pages for the frontend and Cloudflare Workers for the serverless backend.
+This document describes how to deploy the League Tracker application.
 
-## Architecture Overview
+## Deployment Options
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                      GitHub Pages                           │
-│   ┌─────────────────────────────────────────────────────┐   │
-│   │  frontend/                                          │
-│   │  ├── index.html                                    │
-│   │  ├── teams.html                                    │
-│   │  ├── matches.html                                  │
-│   │  ├── leaderboards.html                             │
-│   │  ├── draft.html                                    │
-│   │  ├── styles.css                                    │
-│   │  ├── api.js                                        │
-│   │  └── app.js                                        │
-│   └─────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              │ API Calls
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                   Cloudflare Workers                         │
-│   ┌─────────────────────────────────────────────────────┐   │
-│   │  workers/                                           │
-│   │  ├── src/index.js  (API handlers)                   │
-│   │  └── wrangler.toml (Configuration)                  │
-│   └─────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────┘
-```
+### Option 1: Railway (Recommended)
 
-## Prerequisites
+The easiest way to deploy the full-stack application including database.
 
-1. **GitHub Account** with a repository
-2. **Cloudflare Account** (free tier is sufficient)
-3. **Riot Games API Key** (for League of Legends data)
+**See [DEPLOYMENT_RAILWAY.md](./DEPLOYMENT_RAILWAY.md) for detailed instructions.**
 
-## Step 1: Deploy Frontend to GitHub Pages
+### Option 2: GitHub Pages + Cloudflare Workers (Legacy)
 
-### Automatic Deployment (Recommended)
+The previous deployment approach with separate frontend and backend.
 
-1. Push the `frontend/` directory to your GitHub repository
-2. Go to your repository settings → Pages
-3. Under "Build and deployment":
-   - Source: Select "GitHub Actions"
-4. The workflow `.github/workflows/deploy-pages.yml` will automatically deploy on push to main
+**See [DEPLOYMENT_GITHUB.md](./DEPLOYMENT_GITHUB.md) for legacy instructions.**
 
-## Step 2: Deploy Backend to Cloudflare Workers
+## Quick Start: Railway Deployment
 
-### Install Wrangler CLI
+1. Create a Railway account at https://railway.app
+2. Connect your GitHub repository
+3. Add a PostgreSQL database
+4. Set environment variables:
+   - `RIOT_API_KEY` - Your Riot Games API key
+   - `SECRET_KEY` - Generate with `openssl rand -base64 32`
+5. Deploy!
+
+## Quick Start: Railway CLI
 
 ```bash
-npm install -g wrangler
+# Install Railway CLI
+npm install -g @railway/cli
+
+# Login
+railway login
+
+# Initialize project
+railway init
+
+# Set variables
+railway variables set RIOT_API_KEY=your_api_key
+
+# Deploy
+railway up
 ```
 
-### Login to Cloudflare
+## Architecture
 
-```bash
-wrangler login
-```
+The application is a Flask web app that includes:
+- **Frontend**: HTML templates with Jinja2
+- **Backend**: Flask REST API
+- **Database**: SQLite (local) or PostgreSQL (Railway)
+- **Scheduler**: Background task scheduler for match collection
 
-### Configure Secrets
+## Environment Variables
 
-```bash
-cd workers
-wrangler secret put RIOT_API_KEY
-wrangler secret put DATABASE_URL
-wrangler secret put SECRET_KEY
-```
-
-### Deploy to Production
-
-```bash
-cd workers
-wrangler deploy
-```
-
-## Step 3: Configure API URL
-
-Edit `frontend/api.js`:
-
-```javascript
-const API_BASE_URL = 'https://your-worker.yourname.workers.dev/api';
-```
-
-## API Endpoints
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/teams` | GET | List all teams |
-| `/api/teams/:id` | GET | Get team details |
-| `/api/teams/register` | POST | Register a new team |
-| `/api/players/:puuid/matches` | GET | Get player matches |
-| `/api/players/:puuid/stats` | GET | Get player stats |
-| `/api/league/matches` | GET | Get league matches |
-| `/api/draft/sessions` | GET | List draft sessions |
-| `/api/champions` | GET | List champions |
-
-## Development
-
-### Frontend
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-### Backend (Workers)
-
-```bash
-cd workers
-npm install
-npm run dev
-```
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `DATABASE_URL` | No | PostgreSQL connection string (auto-set on Railway) |
+| `RIOT_API_KEY` | Yes | Riot Games API key |
+| `SECRET_KEY` | Yes | Secret key for sessions |
+| `DEBUG` | No | Set to `False` for production |
+| `AUTO_COLLECT_ENABLED` | No | Enable automatic match collection |
+| `AUTO_COLLECT_INTERVAL` | No | Collection interval in minutes |
 
 ## Cost Estimation
 
-- **GitHub Pages**: Free
-- **Cloudflare Workers**: Free tier includes 100,000 requests/day
+| Platform | Free Tier | Notes |
+|----------|-----------|-------|
+| Railway | $5 credit/month | $0.10/service/hour |
+| PostgreSQL | Included | Storage costs extra |

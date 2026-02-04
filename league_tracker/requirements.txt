@@ -3,6 +3,12 @@ flask-sqlalchemy>=3.0.0
 riotwatcher>=3.2.5
 python-dotenv>=1.0.0
 apscheduler>=3.10.0
+gunicorn>=21.0.0
+
+# Database dependencies
+# For PostgreSQL on Railway
+psycopg2-binary>=2.9.0
+SQLAlchemy>=2.0.0
 
 # Testing dependencies
 pytest>=7.4.0

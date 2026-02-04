@@ -1,11 +1,27 @@
 // League Tracker - API Module
 // This module handles all API communication with the serverless backend
 
-const API_BASE_URL = typeof API_URL !== 'undefined' ? API_URL : '/api';
+// API base URL configuration
+// For local development: use '/api' (proxy) or 'http://localhost:3000'
+// For production: set API_URL environment variable or use window.API_URL
+const getApiBaseUrl = () => {
+  // Check for environment variable (set by build/deployment process)
+  if (typeof API_URL !== 'undefined') return API_URL;
+  
+  // Check for window-level configuration (set by deployment)
+  if (typeof window !== 'undefined' && window.API_URL) return window.API_URL;
+  
+  // Check for query parameter (useful for testing different environments)
+  const params = new URLSearchParams(window.location.search);
+  if (params.has('api')) return params.get('api');
+  
+  // Default to relative path (for local development with proxy)
+  return '/api';
+};
 
 class LeagueAPI {
-    constructor(baseUrl = API_BASE_URL) {
-        this.baseUrl = baseUrl;
+    constructor(baseUrl = null) {
+        this.baseUrl = baseUrl || getApiBaseUrl();
     }
 
     // Generic fetch wrapper with error handling
