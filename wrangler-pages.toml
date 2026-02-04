@@ -1,7 +1,7 @@
-# Wrangler Configuration for League Tracker
-# Cloudflare Workers deployment
+# Cloudflare Pages Configuration
+# This file is used for Pages deployment
 
-name = "league-tracker-workers"
+name = "league-tracker-pages"
 main = "worker/index.py"
 compatibility_date = "2026-02-04"
 compatibility_flags = ["python_workers"]
@@ -31,3 +31,13 @@ bucket_name = "league-tracker-assets"
 # Cron Triggers for scheduled tasks
 [triggers]
 crons = ["*/5 * * * *"]
+
+# Pages configuration
+[[pages]]
+bucket = "./league_tracker/static"
+entry-point = "worker"
+
+# Routes (if using custom domain)
+# routes = [
+#   { pattern = "your-domain.com/*", zone_name = "your-domain.com" }
+# ]
