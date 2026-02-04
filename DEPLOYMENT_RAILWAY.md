@@ -41,11 +41,38 @@ cd riot_api_project_ember
 
 ### 2. Create a Railway Project
 
+**Important:** Create your service in the **project root** (where `start.sh` and `Procfile` are), NOT in the `league_tracker` subfolder.
+
 1. Go to [Railway Dashboard](https://railway.app/dashboard)
 2. Click "New Project"
 3. Select "Deploy from GitHub repo"
 4. Choose your repository
-5. Select the `league_tracker` directory as the root
+5. **Do NOT select `league_tracker` as root** - Railway will deploy from where `Procfile` is located (project root)
+
+### 3. Configure Root Directory (If Needed)
+
+If Railway doesn't auto-detect the correct directory, you have two options:
+
+#### Option A: Set Root Directory
+
+1. Go to your service in Railway dashboard
+2. Click "Settings"
+3. Find "Root Directory" or "Build Path"
+4. Set it to empty (deploy from root) or `./`
+5. Click "Save"
+6. Redeploy
+
+#### Option B: Use Custom Build Command
+
+1. Go to your service in Railway dashboard
+2. Click "Settings"
+3. Find "Custom Build Command"
+4. Enter:
+   ```bash
+   python3 -m pip install -r league_tracker/requirements.txt
+   ```
+5. Click "Save"
+6. Redeploy
 
 ### 3. Configure Environment Variables
 
@@ -68,13 +95,12 @@ In the Railway dashboard, go to your service's "Variables" tab and add:
 
 ### 5. Deploy
 
-1. Railway automatically detects Python/Flask from `Procfile`
-2. Set your root directory to `league_tracker` in Railway settings
-3. Railway will:
+1. Railway will:
    - Detect Python from `requirements.txt`
-   - Use gunicorn from `Procfile`
-   - Start the web server automatically
-4. Or manually trigger deployment from the dashboard
+   - Execute `start.sh` which installs dependencies and runs gunicorn
+   - Start the web server on port $PORT
+2. If deployment fails, check the logs in Railway dashboard
+3. If files aren't found, verify Root Directory is empty/root in Settings
 
 ### 6. Access Your App
 

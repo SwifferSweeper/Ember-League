@@ -1,8 +1,10 @@
 #!/bin/bash
 
-# Install dependencies
+# Change to the app directory
 cd league_tracker
-pip install -r requirements.txt
 
-# Run gunicorn
+# Export the app module path
+export PYTHONPATH="${PYTHONPATH}:${PWD}"
+
+# Run gunicorn (Railway installs dependencies automatically)
 exec gunicorn --bind 0.0.0.0:$PORT app:app
