@@ -45,6 +45,7 @@ cd riot_api_project_ember
 2. Click "New Project"
 3. Select "Deploy from GitHub repo"
 4. Choose your repository
+5. Select the `league_tracker` directory as the root
 
 ### 3. Configure Environment Variables
 
@@ -67,8 +68,13 @@ In the Railway dashboard, go to your service's "Variables" tab and add:
 
 ### 5. Deploy
 
-1. Railway automatically deploys on push to `main` branch
-2. Or manually trigger deployment from the dashboard
+1. Railway automatically detects Python/Flask from `Procfile`
+2. Set your root directory to `league_tracker` in Railway settings
+3. Railway will:
+   - Detect Python from `requirements.txt`
+   - Use gunicorn from `Procfile`
+   - Start the web server automatically
+4. Or manually trigger deployment from the dashboard
 
 ### 6. Access Your App
 
