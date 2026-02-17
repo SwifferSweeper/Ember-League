@@ -317,8 +317,9 @@ def create_app():
     @app.route('/draft/<int:draft_session_id>')
     def draft_view(draft_session_id):
         """View draft session."""
-        draft = DraftSession.query.get_or_404(draft_session_id)
-        return render_template('draft_view.html', draft=draft)
+        draft_session = DraftSession.query.get_or_404(draft_session_id)
+        champions = get_all_champions()
+        return render_template('draft_view.html', draft_session=draft_session, champions=champions)
     
     @app.route('/draft/<int:draft_session_id>/history')
     def draft_history(draft_session_id):
