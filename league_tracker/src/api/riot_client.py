@@ -3,13 +3,16 @@ Riot API client wrapper using requests directly.
 """
 import logging
 from typing import Dict, List, Optional, Any
+import os
 
 import requests
 
-import sys
-import os
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-from config import RIOT_API_KEY, validate_api_key
+# Use environment variable directly for Railway compatibility
+RIOT_API_KEY = os.getenv("RIOT_API_KEY", "")
+
+def validate_api_key():
+    """Validate the Riot API key."""
+    return bool(RIOT_API_KEY and RIOT_API_KEY != "")
 
 logger = logging.getLogger(__name__)
 
