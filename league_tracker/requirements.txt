@@ -1,0 +1,24 @@
+# League Tracker - Railway Deployment Requirements
+
+# Core Flask dependencies
+flask>=2.3.0
+flask-sqlalchemy>=3.0.0
+werkzeug>=2.3.0
+
+# API and utilities
+python-dotenv>=1.0.0
+requests>=2.31.0
+urllib3>=2.0.0
+
+# Riot Games API
+riotwatcher>=3.2.5
+
+# Database dependencies
+sqlalchemy>=2.0.0
+psycopg2-binary>=2.9.0
+
+# Background task scheduling
+apscheduler>=3.10.0
+
+# Web server for production
+gunicorn>=21.0.0
