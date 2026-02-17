@@ -406,6 +406,17 @@ def create_app():
         matches = Match.query.order_by(Match.game_creation.desc()).limit(20).all()
         return jsonify([match.to_dict() for match in matches])
     
+    @app.route('/debug/env')
+    def debug_env():
+        """Debug route to check environment variables."""
+        return jsonify({
+            "riot_key_set": bool(os.getenv("RIOT_API_KEY")),
+            "riot_key_preview": os.getenv("RIOT_API_KEY", "")[:10] + "..." if os.getenv("RIOT_API_KEY") else "NOT SET",
+            "database_url_set": bool(os.getenv("DATABASE_URL")),
+            "secret_key_set": bool(os.getenv("SECRET_KEY")),
+            "all_env_keys": list(os.environ.keys())
+        })
+    
     # ==================== ERROR HANDLERS ====================
     
     @app.errorhandler(404)
