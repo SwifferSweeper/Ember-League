@@ -147,7 +147,7 @@ def create_app():
             
             if not team_name:
                 flash('Team name is required', 'error')
-                return render_template('signup.html')
+                return render_template('signup.html', riot_client=get_riot_client())
             
             # Create team
             team = Team(name=team_name)
@@ -170,7 +170,7 @@ def create_app():
             flash('Team registered successfully!', 'success')
             return redirect(url_for('teams_list'))
         
-        return render_template('signup.html')
+        return render_template('signup.html', riot_client=get_riot_client())
     
     # ==================== ADMIN ROUTES ====================
     
