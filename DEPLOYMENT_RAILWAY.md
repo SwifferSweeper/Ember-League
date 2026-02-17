@@ -41,7 +41,7 @@ cd riot_api_project_ember
 
 ### 2. Create a Railway Project
 
-**Important:** Create your service in the **project root** (where `start.sh` and `Procfile` are), NOT in the `league_tracker` subfolder.
+**Important:** Create your service in the **project root** (where `Procfile` is), NOT in the `league_tracker` subfolder.
 
 1. Go to [Railway Dashboard](https://railway.app/dashboard)
 2. Click "New Project"
@@ -69,7 +69,7 @@ If Railway doesn't auto-detect the correct directory, you have two options:
 3. Find "Custom Build Command"
 4. Enter:
    ```bash
-   python3 -m pip install -r league_tracker/requirements.txt
+   python3 -m pip install -r requirements.txt
    ```
 5. Click "Save"
 6. Redeploy
@@ -175,10 +175,9 @@ Railway provides PostgreSQL automatically:
 
 ### SQLite (For Development)
 
-If you prefer SQLite:
-1. Don't add a PostgreSQL database
-2. Set `DATABASE_URL` to empty or not set
-3. App will use SQLite in `league_tracker/data/league.db`
+If you prefer SQLite for local development:
+1. Don't set `DATABASE_URL` in your `.env` file
+2. The app will use SQLite locally
 
 ## Local Development with Railway
 

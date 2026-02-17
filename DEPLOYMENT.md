@@ -2,19 +2,11 @@
 
 This document describes how to deploy the League Tracker application.
 
-## Deployment Options
-
-### Option 1: Railway (Recommended)
+## Railway (Recommended)
 
 The easiest way to deploy the full-stack application including database.
 
 **See [DEPLOYMENT_RAILWAY.md](./DEPLOYMENT_RAILWAY.md) for detailed instructions.**
-
-### Option 2: GitHub Pages + Cloudflare Workers (Legacy)
-
-The previous deployment approach with separate frontend and backend.
-
-**See [DEPLOYMENT_GITHUB.md](./DEPLOYMENT_GITHUB.md) for legacy instructions.**
 
 ## Quick Start: Railway Deployment
 
@@ -50,7 +42,7 @@ railway up
 The application is a Flask web app that includes:
 - **Frontend**: HTML templates with Jinja2
 - **Backend**: Flask REST API
-- **Database**: SQLite (local) or PostgreSQL (Railway)
+- **Database**: PostgreSQL (Railway)
 - **Scheduler**: Background task scheduler for match collection
 
 ## Environment Variables
