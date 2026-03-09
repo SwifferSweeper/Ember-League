@@ -98,9 +98,11 @@ def create_app():
     app.config['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = SQLALCHEMY_TRACK_MODIFICATIONS
     
-    # Register custom Jinja2 filters
+    # Register custom Jinja2 filters and globals
     app.jinja_env.filters['format_timestamp'] = format_timestamp
     app.jinja_env.filters['format_duration'] = format_duration
+    app.jinja_env.globals['format_timestamp'] = format_timestamp
+    app.jinja_env.globals['format_duration'] = format_duration
     
     db.init_app(app)
     
