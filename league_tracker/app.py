@@ -547,7 +547,7 @@ def create_app():
         for player in team.players:
             try:
                 collector = MatchCollector(riot_client)
-                collector.collect_player_matches(player.puuid, player.region)
+                collector.collect_player_matches(player, count=20)
             except Exception as e:
                 logger.warning(f"Failed to collect matches for {player.display_name}: {e}")
         
