@@ -4,12 +4,16 @@ from sqlalchemy.engine import Engine
 
 db = SQLAlchemy()
 
-# Enable foreign key support for SQLite
+# Enable foreign key support for SQLite only
+# (PostgreSQL supports FKs natively)
 @event.listens_for(Engine, "connect")
 def set_sqlite_pragma(dbapi_conn, connection_record):
-    cursor = dbapi_conn.cursor()
-    cursor.execute("PRAGMA foreign_keys=ON")
-    cursor.close()
+    # Only run PRAGMA for SQLite (connection string contains 'sqlite')
+    dialect = dbapi_conn.__class__.__module__
+    if 'sqlite' in dialect.lower():
+        cursor = dbapi_conn.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
 
 
 class Admin(db.Model):
