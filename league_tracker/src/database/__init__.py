@@ -408,3 +408,131 @@ DraftSession.team_blue = db.relationship('Team', foreign_keys=[DraftSession.team
 DraftSession.team_red = db.relationship('Team', foreign_keys=[DraftSession.team_red_id])
 DraftSession.steps = db.relationship('DraftStep', backref='session', 
                                       order_by='DraftStep.step_number', lazy='dynamic')
+
+
+# ==================== INHOUSE STATS MODELS ====================
+
+
+class InhouseMatch(db.Model):
+    """Match record for inhouse games."""
+    __tablename__ = 'inhouse_matches'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    match_id = db.Column(db.String(50), unique=True, nullable=False, index=True)
+    game_date = db.Column(db.DateTime, nullable=False)
+    game_duration_min = db.Column(db.Float, nullable=False)
+    queue_id = db.Column(db.Integer)
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+    
+    # Relationships
+    participants = db.relationship('InhouseParticipant', backref='match', lazy='dynamic', 
+                                   cascade='all, delete-orphan')
+    
+    def __repr__(self):
+        return f'<InhouseMatch {self.match_id}>'
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'match_id': self.match_id,
+            'game_date': self.game_date.isoformat() if self.game_date else None,
+            'game_duration_min': self.game_duration_min,
+            'queue_id': self.queue_id,
+            'participant_count': self.participants.count()
+        }
+
+
+class InhouseParticipant(db.Model):
+    """Individual player stats in an inhouse match."""
+    __tablename__ = 'inhouse_participants'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    match_id = db.Column(db.Integer, db.ForeignKey('inhouse_matches.id'), nullable=False)
+    
+    # Player identification
+    summoner_name = db.Column(db.String(50), nullable=False)
+    tag = db.Column(db.String(10))
+    puuid = db.Column(db.String(100))
+    
+    # Team and champion
+    team = db.Column(db.String(10), nullable=False)  # 'Blue' or 'Red'
+    champion = db.Column(db.String(50), nullable=False)
+    role = db.Column(db.String(20))
+    
+    # Game result
+    win = db.Column(db.Boolean, nullable=False)
+    
+    # KDA stats
+    kills = db.Column(db.Integer, default=0)
+    deaths = db.Column(db.Integer, default=0)
+    assists = db.Column(db.Integer, default=0)
+    kda = db.Column(db.Float, default=0.0)
+    
+    # Multi-kills
+    double_kills = db.Column(db.Integer, default=0)
+    triple_kills = db.Column(db.Integer, default=0)
+    quadra_kills = db.Column(db.Integer, default=0)
+    penta_kills = db.Column(db.Integer, default=0)
+    
+    # Damage stats
+    total_damage_to_champions = db.Column(db.Integer, default=0)
+    damage_per_min = db.Column(db.Float, default=0.0)
+    physical_damage = db.Column(db.Integer, default=0)
+    magic_damage = db.Column(db.Integer, default=0)
+    true_damage = db.Column(db.Integer, default=0)
+    damage_taken = db.Column(db.Integer, default=0)
+    damage_mitigated = db.Column(db.Integer, default=0)
+    
+    # CS and Gold
+    cs = db.Column(db.Integer, default=0)
+    cs_per_min = db.Column(db.Float, default=0.0)
+    gold_earned = db.Column(db.Integer, default=0)
+    gold_per_min = db.Column(db.Float, default=0.0)
+    
+    # Vision
+    vision_score = db.Column(db.Integer, default=0)
+    wards_placed = db.Column(db.Integer, default=0)
+    wards_killed = db.Column(db.Integer, default=0)
+    control_wards_bought = db.Column(db.Integer, default=0)
+    
+    # Objectives
+    turret_kills = db.Column(db.Integer, default=0)
+    turret_damage = db.Column(db.Integer, default=0)
+    objective_damage = db.Column(db.Integer, default=0)
+    
+    # Team objectives
+    team_dragons = db.Column(db.Integer, default=0)
+    team_first_dragon = db.Column(db.Boolean, default=False)
+    team_barons = db.Column(db.Integer, default=0)
+    team_first_baron = db.Column(db.Boolean, default=False)
+    team_heralds = db.Column(db.Integer, default=0)
+    team_first_herald = db.Column(db.Boolean, default=False)
+    team_grubs = db.Column(db.Integer, default=0)
+    team_first_grubs = db.Column(db.Boolean, default=False)
+    team_towers = db.Column(db.Integer, default=0)
+    team_first_tower = db.Column(db.Boolean, default=False)
+    team_first_blood = db.Column(db.Boolean, default=False)
+    
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+    
+    def __repr__(self):
+        return f'<InhouseParticipant {self.summoner_name} {self.champion}>'
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'match_id': self.match_id,
+            'summoner_name': self.summoner_name,
+            'tag': self.tag,
+            'team': self.team,
+            'champion': self.champion,
+            'role': self.role,
+            'win': self.win,
+            'kills': self.kills,
+            'deaths': self.deaths,
+            'assists': self.assists,
+            'kda': self.kda,
+            'cs': self.cs,
+            'gold_earned': self.gold_earned,
+            'vision_score': self.vision_score
+        }
