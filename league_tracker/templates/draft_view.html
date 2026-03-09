@@ -7,73 +7,73 @@
 <div class="container">
     <div class="alert alert-error">
         <h2>Link Already Used</h2>
-        <p>This draft link has already been claimed. Each side link can only be used by one person at a time.</p>
-        <p>If you were the one who originally claimed this link and want to leave, please contact the draft creator.</p>
+        <p>This draft link has already been claimed.</p>
         <a href="{{ url_for('draft_index') }}" class="btn btn-primary">Back to Drafts</a>
     </div>
 </div>
 {% else %}
 <!-- LCK-Style Draft Screen -->
 <div class="lck-draft-wrapper">
-    <!-- LEFT SIDE - Blue Team -->
-    <div class="team-panel blue-team">
+    
+    <!-- COLUMN 1: BLUE TEAM (35%) -->
+    <div class="team-column blue-column">
         <!-- Team Header -->
         <div class="team-header">
-            <div class="team-logo-large">
-                <span>{{ draft_session.team_blue.name[0] if draft_session.team_blue else 'B' }}</span>
+            <div class="team-logo-box">
+                <span class="team-initial">{{ draft_session.team_blue.name[0] if draft_session.team_blue else 'B' }}</span>
             </div>
-            <div class="team-names">
+            <div class="team-info">
                 <h2 class="team-name">{{ draft_session.team_blue.name if draft_session.team_blue else 'BLUE TEAM' }}</h2>
             </div>
-            <div class="team-ready {% if draft_session.is_active %}ready{% endif %}">
-                <span class="ready-indicator"></span>
-            </div>
+            <div class="ready-dot" id="blue-ready-indicator"></div>
         </div>
         
-        <!-- Bans Row -->
+        <!-- TOP SECTION: Bans (Horizontal) -->
         <div class="bans-section">
-            <div class="bans-label">BANS</div>
+            <div class="section-label">BANS</div>
             <div class="bans-row">
                 {% for i in range(draft_session.bans_per_team) %}
                 <div class="ban-slot" data-team="blue" data-slot="{{ i }}">
-                    <img class="ban-champion" src="" alt="Ban {{ i + 1 }}">
-                    <div class="ban-overlay">
+                    <img class="ban-champion" src="" alt="">
+                    <div class="ban-x-overlay">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
                             <line x1="18" y1="6" x2="6" y2="18"></line>
                             <line x1="6" y1="6" x2="18" y2="18"></line>
                         </svg>
                     </div>
-                    <span class="ban-number">{{ i + 1 }}</span>
                 </div>
                 {% endfor %}
             </div>
         </div>
         
-        <!-- Picks Column -->
+        <!-- BOTTOM SECTION: Picks (Vertical Column) -->
         <div class="picks-section">
             <div class="picks-column">
                 {% set positions = ['TOP', 'JUNGLE', 'MID', 'ADC', 'SUPPORT'] %}
                 {% for i in range(draft_session.picks_per_team) %}
-                <div class="pick-slot {% if draft_session.current_team_turn == 'blue' and draft_session.current_phase in ['bans', 'picks'] and draft_session.is_active %}active{% endif %}" 
+                <div class="pick-slot {% if draft_session.current_team_turn == 'blue' and draft_session.is_active %}active{% endif %}" 
                      data-team="blue" 
-                     data-slot="{{ i }}">
-                    <div class="pick-role">{{ positions[i] }}</div>
-                    <div class="pick-champion-container">
-                        <img class="pick-champion" src="" alt="Pick {{ i + 1 }}">
-                        <div class="pick-empty">
-                            <span class="pick-number">{{ i + 1 }}</span>
+                     data-slot="{{ i }}"
+                     data-role="{{ positions[i] }}">
+                    <div class="pick-champion-box">
+                        <img class="pick-champion" src="" alt="">
+                        <div class="pick-empty-box">
+                            <span class="pick-num">{{ i + 1 }}</span>
                         </div>
                     </div>
-                    <div class="pick-player">
-                        {% if draft_session.team_blue and draft_session.team_blue.players %}
-                            {% if i < draft_session.team_blue.players|length %}
-                                <span class="player-name">{{ draft_session.team_blue.players[i].game_name }}</span>
+                    <div class="pick-info">
+                        <span class="pick-role">{{ positions[i] }}</span>
+                        <span class="pick-player-name">
+                            {% if draft_session.team_blue and draft_session.team_blue.players %}
+                                {% if i < draft_session.team_blue.players|length %}
+                                    {{ draft_session.team_blue.players[i].game_name }}
+                                {% else %}
+                                    TBD
+                                {% endif %}
                             {% else %}
-                                <span class="player-name tbd">TBD</span>
+                                TBD
                             {% endif %}
-                        {% else %}
-                            <span class="player-name tbd">TBD</span>
-                        {% endif %}
+                        </span>
                     </div>
                 </div>
                 {% endfor %}
@@ -82,49 +82,63 @@
         
         <!-- Ready Button -->
         {% if user_side == 'blue' %}
-        <div class="team-actions">
-            <button id="blue-ready-btn" class="ready-button blue-ready">READY</button>
+        <div class="team-ready-section">
+            <button id="blue-ready-btn" class="ready-btn blue-btn">READY</button>
         </div>
         {% endif %}
     </div>
     
-    <!-- CENTER - Draft Info -->
-    <div class="center-panel">
-        <!-- Phase and Timer -->
-        <div class="draft-info-section">
-            <div class="phase-display">
-                <span class="phase-label">{{ draft_session.current_phase|upper }} {{ ((draft_session.step_number + 1) // 2) if draft_session.current_phase == 'bans' else ((draft_session.step_number + 1) // 2) }}</span>
-            </div>
-            
-            <div class="timer-section">
-                <div class="timer-value" id="draft-timer">30</div>
-            </div>
-            
-            <div class="turn-indicator {% if draft_session.current_team_turn == 'blue' %}blue-turn{% else %}red-turn{% endif %}">
-                <span class="turn-text">{{ draft_session.team_blue.name if draft_session.team_blue else 'BLUE' }} vs {{ draft_session.team_red.name if draft_session.team_red else 'RED' }}</span>
-            </div>
-            
-            <div class="game-info">
-                <span class="game-number">GAME {{ draft_session.current_game_number }}</span>
-                <span class="draft-mode">{{ draft_session.draft_mode|upper }}</span>
-            </div>
+    <!-- COLUMN 2: DRAFT CENTER PANEL (30%) -->
+    <div class="center-column">
+        <!-- Phase Label -->
+        <div class="draft-phase">
+            <span class="phase-text">
+                {% if draft_session.current_phase == 'bans' %}
+                    BAN PHASE {{ ((draft_session.step_number + 1) // 2) }}
+                {% else %}
+                    PICK PHASE {{ ((draft_session.step_number + 1) // 2) }}
+                {% endif %}
+            </span>
+        </div>
+        
+        <!-- Countdown Timer -->
+        <div class="draft-timer">
+            <span class="timer-number" id="draft-timer">30</span>
+        </div>
+        
+        <!-- Turn Indicator -->
+        <div class="turn-display {% if draft_session.current_team_turn == 'blue' %}blue-turn{% else %}red-turn{% endif %}">
+            <span class="turn-text">
+                {% if draft_session.current_team_turn == 'blue' %}
+                    Blue Team Picking
+                {% else %}
+                    Red Team Picking
+                {% endif %}
+            </span>
+        </div>
+        
+        <!-- Game Info -->
+        <div class="game-details">
+            <span class="patch-version">Patch 14.x</span>
+            <span class="game-number">Game {{ draft_session.current_game_number }}</span>
+            <span class="draft-mode-label">{{ draft_session.draft_mode|upper }}</span>
         </div>
         
         <!-- Action Buttons -->
         <div class="center-actions">
-            <button id="refresh-draft" class="action-btn" title="Refresh">
+            <button class="action-icon" id="refresh-draft" title="Refresh">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
                 </svg>
             </button>
-            <a href="{{ url_for('draft_history', draft_session_id=draft_session.id) }}" class="action-btn" title="History">
+            <a href="{{ url_for('draft_history', draft_session_id=draft_session.id) }}" class="action-icon" title="History">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="10"/>
                     <polyline points="12 6 12 12 16 14"/>
                 </svg>
             </a>
             {% if user_side and user_side != 'spectator' %}
-            <button id="leave-draft" class="action-btn warning" onclick="leaveDraft()" title="Leave Draft">
+            <button class="action-icon leave-btn" onclick="leaveDraft()" title="Leave">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
                     <polyline points="16 17 21 12 16 7"/>
@@ -134,22 +148,20 @@
             {% endif %}
         </div>
         
-        <!-- Champion Selection Panel -->
-        <div class="champion-select-section">
-            <div class="champion-panel-header">
+        <!-- Champion Selection -->
+        <div class="champion-selection-area">
+            <div class="champion-header">
                 <h3>CHAMPION SELECT</h3>
                 <span class="selection-hint" id="selection-status">
                     {% if not draft_session.is_active %}
-                        Draft complete
-                    {% elif not match_started %}
-                        Waiting for both teams to ready...
+                        Draft Complete
                     {% else %}
                         Select a champion to {{ draft_session.current_phase[:-1] if draft_session.current_phase else 'ban' }}
                     {% endif %}
                 </span>
             </div>
             <div class="champion-filters">
-                <select id="filter-position" class="role-filter">
+                <select id="filter-position" class="role-select">
                     <option value="">All Roles</option>
                     <option value="top">Top</option>
                     <option value="jungle">Jungle</option>
@@ -157,82 +169,80 @@
                     <option value="adc">ADC</option>
                     <option value="support">Support</option>
                 </select>
-                <input type="text" id="search-champion" class="champion-search" placeholder="Search champion...">
+                <input type="text" id="search-champion" class="champ-search" placeholder="Search...">
             </div>
             <div class="champion-grid" id="champion-grid">
                 {% for champion in champions %}
-                <div class="champion-card" data-champion-id="{{ champion.id }}" data-champion-name="{{ champion.name }}">
+                <div class="champion-tile" data-champion-id="{{ champion.id }}" data-champion-name="{{ champion.name }}">
                     <img src="https://ddragon.leagueoflegends.com/cdn/img/champion/splash/{{ champion.name }}_0.jpg" 
                          alt="{{ champion.name }}"
-                         loading="lazy"
-                         onerror="this.style.display='none'">
-                    <span class="champion-name">{{ champion.name }}</span>
+                         loading="lazy">
                 </div>
                 {% endfor %}
             </div>
         </div>
     </div>
     
-    <!-- RIGHT SIDE - Red Team -->
-    <div class="team-panel red-team">
+    <!-- COLUMN 3: RED TEAM (35%) -->
+    <div class="team-column red-column">
         <!-- Team Header -->
         <div class="team-header">
-            <div class="team-ready {% if draft_session.is_active %}ready{% endif %}">
-                <span class="ready-indicator"></span>
-            </div>
-            <div class="team-names">
+            <div class="ready-dot" id="red-ready-indicator"></div>
+            <div class="team-info">
                 <h2 class="team-name">{{ draft_session.team_red.name if draft_session.team_red else 'RED TEAM' }}</h2>
             </div>
-            <div class="team-logo-large">
-                <span>{{ draft_session.team_red.name[0] if draft_session.team_red else 'R' }}</span>
+            <div class="team-logo-box">
+                <span class="team-initial">{{ draft_session.team_red.name[0] if draft_session.team_red else 'R' }}</span>
             </div>
         </div>
         
-        <!-- Bans Row -->
+        <!-- TOP SECTION: Bans (Horizontal) -->
         <div class="bans-section">
-            <div class="bans-label">BANS</div>
+            <div class="section-label">BANS</div>
             <div class="bans-row">
                 {% for i in range(draft_session.bans_per_team) %}
                 <div class="ban-slot" data-team="red" data-slot="{{ i }}">
-                    <img class="ban-champion" src="" alt="Ban {{ i + 1 }}">
-                    <div class="ban-overlay">
+                    <img class="ban-champion" src="" alt="">
+                    <div class="ban-x-overlay">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
                             <line x1="18" y1="6" x2="6" y2="18"></line>
                             <line x1="6" y1="6" x2="18" y2="18"></line>
                         </svg>
                     </div>
-                    <span class="ban-number">{{ i + 1 }}</span>
                 </div>
                 {% endfor %}
             </div>
         </div>
         
-        <!-- Picks Column -->
+        <!-- BOTTOM SECTION: Picks (Vertical Column) -->
         <div class="picks-section">
             <div class="picks-column">
                 {% set positions = ['TOP', 'JUNGLE', 'MID', 'ADC', 'SUPPORT'] %}
                 {% for i in range(draft_session.picks_per_team) %}
-                <div class="pick-slot {% if draft_session.current_team_turn == 'red' and draft_session.current_phase in ['bans', 'picks'] and draft_session.is_active %}active{% endif %}" 
+                <div class="pick-slot {% if draft_session.current_team_turn == 'red' and draft_session.is_active %}active{% endif %}" 
                      data-team="red" 
-                     data-slot="{{ i }}">
-                    <div class="pick-player">
-                        {% if draft_session.team_red and draft_session.team_red.players %}
-                            {% if i < draft_session.team_red.players|length %}
-                                <span class="player-name">{{ draft_session.team_red.players[i].game_name }}</span>
+                     data-slot="{{ i }}"
+                     data-role="{{ positions[i] }}">
+                    <div class="pick-info">
+                        <span class="pick-player-name">
+                            {% if draft_session.team_red and draft_session.team_red.players %}
+                                {% if i < draft_session.team_red.players|length %}
+                                    {{ draft_session.team_red.players[i].game_name }}
+                                {% else %}
+                                    TBD
+                                {% endif %}
                             {% else %}
-                                <span class="player-name tbd">TBD</span>
+                                TBD
                             {% endif %}
-                        {% else %}
-                            <span class="player-name tbd">TBD</span>
-                        {% endif %}
+                        </span>
+                        <span class="pick-role">{{ positions[i] }}</span>
                     </div>
-                    <div class="pick-champion-container">
-                        <img class="pick-champion" src="" alt="Pick {{ i + 1 }}">
-                        <div class="pick-empty">
-                            <span class="pick-number">{{ i + 1 }}</span>
+                    <div class="pick-champion-box">
+                        <img class="pick-champion" src="" alt="">
+                        <div class="pick-empty-box">
+                            <span class="pick-num">{{ i + 1 }}</span>
                         </div>
                     </div>
-                    <div class="pick-role">{{ positions[i] }}</div>
                 </div>
                 {% endfor %}
             </div>
@@ -240,20 +250,20 @@
         
         <!-- Ready Button -->
         {% if user_side == 'red' %}
-        <div class="team-actions">
-            <button id="red-ready-btn" class="ready-button red-ready">READY</button>
+        <div class="team-ready-section">
+            <button id="red-ready-btn" class="ready-btn red-btn">READY</button>
         </div>
         {% endif %}
     </div>
 </div>
 
-<!-- User Side Indicator -->
+<!-- User Side Toast -->
 {% if user_side %}
-<div class="user-side-toast {{ user_side }}-toast">
+<div class="user-side-toast">
     {% if user_side == 'spectator' %}
         SPECTATOR MODE
     {% else %}
-        You are on {{ user_side|upper }} side
+        YOU ARE ON {{ user_side|upper }} SIDE
     {% endif %}
 </div>
 {% endif %}
@@ -261,12 +271,12 @@
 <!-- Spectator Notice -->
 {% if user_side == 'spectator' %}
 <div class="spectator-notice">
-    Spectators cannot participate in the draft
+    Spectators cannot participate
 </div>
 {% endif %}
 
 <script>
-    // Draft state management
+    // Draft state
     const draftState = {
         sessionId: {{ draft_session.id | tojson }},
         currentGameNumber: {{ draft_session.current_game_number | tojson }},
@@ -279,65 +289,66 @@
         isActive: {{ draft_session.is_active | tojson }},
         timerRemaining: 30,
         selectedChampion: null,
-        selectedPlayer: null,
-        selectedPosition: null,
         matchStarted: false,
         blueReady: false,
         redReady: false,
-        userTeam: null,
         userSide: {{ user_side | tojson if user_side else 'null' }}
     };
 
-    // Champion data for client-side use
+    // Champion map
     const championsData = {{ champions | tojson }};
     const championMap = {};
     for (let i = 0; i < championsData.length; i++) {
         championMap[championsData[i].id] = championsData[i];
     }
 
-    // Add styles
-    var style = document.createElement('style');
-    style.textContent = `
+    // Add LCK-style CSS
+    var css = document.createElement('style');
+    css.textContent = `
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
         .lck-draft-wrapper {
             display: grid;
-            grid-template-columns: 1fr 400px 1fr;
-            gap: 20px;
+            grid-template-columns: 35% 30% 35%;
+            width: 100vw;
             min-height: 100vh;
-            background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 100%);
-            padding: 20px;
-            box-sizing: border-box;
+            background: linear-gradient(180deg, #0a0a0f 0%, #12121a 50%, #0a0a0f 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         
-        .team-panel {
+        /* Team Columns */
+        .team-column {
             display: flex;
             flex-direction: column;
+            padding: 20px;
             gap: 15px;
         }
         
-        .blue-team {
-            align-items: flex-end;
+        .blue-column {
+            background: linear-gradient(90deg, rgba(0, 80, 180, 0.15) 0%, transparent 100%);
+            border-right: 1px solid rgba(0, 100, 200, 0.2);
         }
         
-        .red-team {
-            align-items: flex-start;
+        .red-column {
+            background: linear-gradient(-90deg, rgba(180, 30, 0, 0.15) 0%, transparent 100%);
+            border-left: 1px solid rgba(200, 50, 0, 0.2);
         }
         
+        /* Team Header */
         .team-header {
             display: flex;
             align-items: center;
             gap: 15px;
-            padding: 15px 20px;
-            background: rgba(10, 150, 255, 0.1);
-            border: 1px solid rgba(10, 150, 255, 0.3);
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.4);
             border-radius: 8px;
         }
         
-        .red-team .team-header {
-            background: rgba(255, 50, 50, 0.1);
-            border-color: rgba(255, 50, 50, 0.3);
+        .red-column .team-header {
+            flex-direction: row-reverse;
         }
         
-        .team-logo-large {
+        .team-logo-box {
             width: 50px;
             height: 50px;
             border-radius: 8px;
@@ -346,39 +357,41 @@
             justify-content: center;
             font-weight: bold;
             font-size: 1.5rem;
-        }
-        
-        .blue-team .team-logo-large {
-            background: linear-gradient(135deg, #0a96ff, #0033aa);
             color: white;
         }
         
-        .red-team .team-logo-large {
-            background: linear-gradient(135deg, #ff3232, #aa0000);
-            color: white;
+        .blue-column .team-logo-box {
+            background: linear-gradient(135deg, #0066cc, #003366);
+            box-shadow: 0 0 20px rgba(0, 100, 255, 0.4);
         }
         
-        .team-names {
-            flex: 1;
+        .red-column .team-logo-box {
+            background: linear-gradient(135deg, #cc2200, #660000);
+            box-shadow: 0 0 20px rgba(255, 50, 0, 0.4);
         }
+        
+        .team-info { flex: 1; }
         
         .team-name {
-            margin: 0;
-            font-size: 1.2rem;
-            font-weight: bold;
             color: #fff;
+            font-size: 1.1rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
         
-        .team-ready .ready-indicator {
-            width: 12px;
-            height: 12px;
+        .red-column .team-name { text-align: right; }
+        
+        .ready-dot {
+            width: 14px;
+            height: 14px;
             border-radius: 50%;
-            background: #666;
+            background: #444;
         }
         
-        .team-ready.ready .ready-indicator {
-            background: #4caf50;
-            box-shadow: 0 0 10px #4caf50;
+        .ready-dot.active {
+            background: #00cc44;
+            box-shadow: 0 0 15px #00ff55;
         }
         
         /* Bans Section */
@@ -389,11 +402,11 @@
             gap: 8px;
         }
         
-        .bans-label {
-            font-size: 0.75rem;
+        .section-label {
+            font-size: 0.7rem;
             font-weight: bold;
-            color: #888;
-            letter-spacing: 2px;
+            color: #666;
+            letter-spacing: 3px;
         }
         
         .bans-row {
@@ -402,39 +415,45 @@
         }
         
         .ban-slot {
-            width: 50px;
-            height: 50px;
+            width: 52px;
+            height: 52px;
             position: relative;
             background: rgba(0, 0, 0, 0.5);
             border: 2px solid #333;
-            border-radius: 4px;
+            border-radius: 6px;
             overflow: hidden;
         }
         
         .ban-slot.active {
             border-color: #ffd700;
             box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
-            animation: banPulse 1s infinite;
+            animation: banGlow 1.5s infinite;
         }
         
-        @keyframes banPulse {
+        @keyframes banGlow {
             0%, 100% { box-shadow: 0 0 10px rgba(255, 215, 0, 0.3); }
-            50% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.6); }
+            50% { box-shadow: 0 0 25px rgba(255, 215, 0, 0.7); }
         }
         
         .ban-champion {
             width: 100%;
             height: 100%;
             object-fit: cover;
+            filter: saturate(0.3);
+            transition: filter 0.3s;
         }
         
-        .ban-overlay {
+        .ban-slot.has-champion .ban-champion {
+            filter: saturate(0.5);
+        }
+        
+        .ban-x-overlay {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.7);
+            background: rgba(0, 0, 0, 0.6);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -442,22 +461,14 @@
             transition: opacity 0.3s;
         }
         
-        .ban-slot.has-champion .ban-overlay {
+        .ban-slot.has-champion .ban-x-overlay {
             opacity: 1;
         }
         
-        .ban-overlay svg {
-            width: 30px;
-            height: 30px;
+        .ban-x-overlay svg {
+            width: 28px;
+            height: 28px;
             color: #ff4444;
-        }
-        
-        .ban-number {
-            position: absolute;
-            bottom: 2px;
-            right: 2px;
-            font-size: 0.6rem;
-            color: #888;
         }
         
         /* Picks Section */
@@ -471,46 +482,37 @@
             display: flex;
             flex-direction: column;
             gap: 8px;
+            width: 100%;
+            max-width: 280px;
         }
         
         .pick-slot {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
             padding: 8px;
             background: rgba(0, 0, 0, 0.3);
-            border: 2px solid #333;
+            border: 2px solid #2a2a35;
             border-radius: 6px;
-            min-width: 200px;
+            transition: all 0.3s;
         }
         
-        .blue-team .pick-slot {
-            flex-direction: row;
-        }
-        
-        .red-team .pick-slot {
+        .red-column .pick-slot {
             flex-direction: row-reverse;
             text-align: right;
         }
         
         .pick-slot.active {
             border-color: #ffd700;
-            box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+            background: rgba(255, 215, 0, 0.1);
         }
         
-        .pick-role {
-            font-size: 0.65rem;
-            font-weight: bold;
-            color: #666;
-            width: 55px;
-            text-transform: uppercase;
-        }
-        
-        .pick-champion-container {
-            width: 44px;
-            height: 44px;
+        .pick-champion-box {
+            width: 46px;
+            height: 46px;
             position: relative;
-            background: #1a1a2e;
+            background: #1a1a25;
             border: 2px solid #333;
             border-radius: 4px;
             overflow: hidden;
@@ -522,7 +524,7 @@
             object-fit: cover;
         }
         
-        .pick-empty {
+        .pick-empty-box {
             position: absolute;
             top: 0;
             left: 0;
@@ -531,151 +533,153 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: #111;
+            background: #0d0d12;
         }
         
-        .pick-number {
-            font-size: 0.8rem;
+        .pick-num {
             color: #444;
+            font-size: 0.9rem;
+            font-weight: bold;
         }
         
-        .pick-player {
+        .pick-info {
             flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
         }
         
-        .player-name {
-            font-size: 0.75rem;
+        .pick-role {
+            font-size: 0.65rem;
+            font-weight: bold;
+            color: #555;
+            letter-spacing: 1px;
+        }
+        
+        .pick-player-name {
+            font-size: 0.8rem;
             font-weight: bold;
             color: #fff;
         }
         
-        .player-name.tbd {
-            color: #555;
-        }
-        
-        /* Team Actions */
-        .team-actions {
+        /* Ready Button */
+        .team-ready-section {
             display: flex;
             justify-content: center;
             padding: 10px;
         }
         
-        .ready-button {
-            padding: 12px 40px;
+        .ready-btn {
+            padding: 14px 50px;
             font-size: 1rem;
             font-weight: bold;
             border: none;
             border-radius: 6px;
             cursor: pointer;
             text-transform: uppercase;
-            letter-spacing: 2px;
+            letter-spacing: 3px;
             transition: all 0.3s;
         }
         
-        .blue-ready {
-            background: linear-gradient(135deg, #0a96ff, #0033aa);
+        .blue-btn {
+            background: linear-gradient(135deg, #0066cc, #003366);
             color: white;
         }
         
-        .blue-ready:hover {
-            box-shadow: 0 0 20px rgba(10, 150, 255, 0.5);
+        .blue-btn:hover {
+            box-shadow: 0 0 30px rgba(0, 100, 255, 0.6);
         }
         
-        .red-ready {
-            background: linear-gradient(135deg, #ff3232, #aa0000);
+        .red-btn {
+            background: linear-gradient(135deg, #cc2200, #660000);
             color: white;
         }
         
-        .red-ready:hover {
-            box-shadow: 0 0 20px rgba(255, 50, 50, 0.5);
+        .red-btn:hover {
+            box-shadow: 0 0 30px rgba(255, 50, 0, 0.6);
         }
         
-        .ready-button:disabled {
+        .ready-btn:disabled {
             background: #333;
             color: #666;
             cursor: not-allowed;
+            box-shadow: none;
         }
         
-        /* Center Panel */
-        .center-panel {
+        /* Center Column */
+        .center-column {
             display: flex;
             flex-direction: column;
+            align-items: center;
+            padding: 30px 20px;
             gap: 20px;
-            max-width: 400px;
-            margin: 0 auto;
+            background: rgba(0, 0, 0, 0.3);
         }
         
-        .draft-info-section {
-            text-align: center;
-            padding: 20px;
-            background: rgba(0, 0, 0, 0.5);
-            border-radius: 10px;
-            border: 1px solid #333;
+        .draft-phase {
+            padding: 10px 30px;
+            background: rgba(255, 215, 0, 0.1);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            border-radius: 6px;
         }
         
-        .phase-display {
-            margin-bottom: 10px;
-        }
-        
-        .phase-label {
+        .phase-text {
             font-size: 1rem;
             font-weight: bold;
             color: #ffd700;
-            text-transform: uppercase;
-            letter-spacing: 3px;
+            letter-spacing: 4px;
         }
         
-        .timer-section {
-            margin: 15px 0;
+        .draft-timer {
+            padding: 20px 50px;
         }
         
-        .timer-value {
-            font-size: 3rem;
+        .timer-number {
+            font-size: 4rem;
             font-weight: bold;
             color: #fff;
-            text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+            text-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+            font-family: 'Arial Black', sans-serif;
         }
         
-        .turn-indicator {
-            padding: 10px 20px;
-            border-radius: 6px;
-            margin: 10px 0;
+        .turn-display {
+            padding: 15px 40px;
+            border-radius: 8px;
+            text-align: center;
         }
         
-        .turn-indicator.blue-turn {
-            background: linear-gradient(135deg, rgba(10, 150, 255, 0.2), rgba(0, 51, 170, 0.2));
-            border: 1px solid rgba(10, 150, 255, 0.5);
+        .turn-display.blue-turn {
+            background: linear-gradient(135deg, rgba(0, 100, 255, 0.2), rgba(0, 50, 150, 0.2));
+            border: 1px solid rgba(0, 100, 255, 0.4);
         }
         
-        .turn-indicator.red-turn {
-            background: linear-gradient(135deg, rgba(255, 50, 50, 0.2), rgba(170, 0, 0, 0.2));
-            border: 1px solid rgba(255, 50, 50, 0.5);
+        .turn-display.red-turn {
+            background: linear-gradient(135deg, rgba(255, 50, 0, 0.2), rgba(150, 30, 0, 0.2));
+            border: 1px solid rgba(255, 50, 0, 0.4);
         }
         
         .turn-text {
-            font-size: 0.9rem;
+            font-size: 1.1rem;
             font-weight: bold;
             color: #fff;
+            letter-spacing: 2px;
         }
         
-        .game-info {
+        .game-details {
             display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin-top: 10px;
+            gap: 20px;
             font-size: 0.75rem;
             color: #666;
         }
         
         .center-actions {
             display: flex;
-            justify-content: center;
             gap: 10px;
         }
         
-        .action-btn {
-            width: 40px;
-            height: 40px;
+        .action-icon {
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
             border: 1px solid #444;
             background: rgba(0, 0, 0, 0.5);
@@ -688,42 +692,43 @@
             text-decoration: none;
         }
         
-        .action-btn:hover {
+        .action-icon:hover {
             background: rgba(255, 255, 255, 0.1);
             color: #fff;
         }
         
-        .action-btn.warning:hover {
-            background: rgba(255, 50, 50, 0.3);
+        .leave-btn:hover {
+            background: rgba(255, 50, 0, 0.3);
             border-color: #ff3232;
             color: #ff3232;
         }
         
         /* Champion Selection */
-        .champion-select-section {
-            background: rgba(0, 0, 0, 0.5);
+        .champion-selection-area {
+            width: 100%;
+            max-width: 320px;
+            background: rgba(0, 0, 0, 0.4);
             border-radius: 10px;
             padding: 15px;
             border: 1px solid #333;
         }
         
-        .champion-panel-header {
+        .champion-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 10px;
         }
         
-        .champion-panel-header h3 {
-            margin: 0;
-            font-size: 0.9rem;
+        .champion-header h3 {
             color: #fff;
+            font-size: 0.85rem;
             letter-spacing: 2px;
         }
         
         .selection-hint {
-            font-size: 0.7rem;
-            color: #888;
+            font-size: 0.65rem;
+            color: #666;
         }
         
         .champion-filters {
@@ -732,71 +737,53 @@
             margin-bottom: 10px;
         }
         
-        .role-filter, .champion-search {
+        .role-select, .champ-search {
             flex: 1;
             padding: 8px;
             background: #111;
             border: 1px solid #333;
             border-radius: 4px;
-            color: #fff;
-            font-size: 0.8rem;
-        }
-        
-        .role-filter:focus, .champion-search:focus {
-            outline: none;
-            border-color: #0a96ff;
+            color: #aaa;
+            font-size: 0.75rem;
         }
         
         .champion-grid {
             display: grid;
-            grid-template-columns: repeat(5, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 4px;
-            max-height: 300px;
+            max-height: 250px;
             overflow-y: auto;
         }
         
-        .champion-card {
+        .champion-tile {
             aspect-ratio: 1;
-            position: relative;
-            background: #1a1a2e;
-            border: 2px solid #333;
+            background: #1a1a25;
+            border: 2px solid #2a2a35;
             border-radius: 4px;
             overflow: hidden;
             cursor: pointer;
             transition: all 0.2s;
         }
         
-        .champion-card:hover {
-            border-color: #0a96ff;
-            transform: scale(1.05);
+        .champion-tile:hover {
+            border-color: #0066cc;
+            transform: scale(1.08);
         }
         
-        .champion-card.unavailable {
-            opacity: 0.4;
+        .champion-tile.unavailable {
+            opacity: 0.35;
             pointer-events: none;
         }
         
-        .champion-card.selected {
+        .champion-tile.selected {
             border-color: #ffd700;
             box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
         }
         
-        .champion-card img {
+        .champion-tile img {
             width: 100%;
             height: 100%;
             object-fit: cover;
-        }
-        
-        .champion-card .champion-name {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            padding: 2px;
-            background: rgba(0, 0, 0, 0.7);
-            font-size: 0.5rem;
-            color: #fff;
-            text-align: center;
         }
         
         /* User Side Toast */
@@ -805,382 +792,222 @@
             top: 20px;
             left: 50%;
             transform: translateX(-50%);
-            padding: 10px 30px;
-            border-radius: 20px;
+            padding: 12px 30px;
+            border-radius: 25px;
             font-weight: bold;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             letter-spacing: 2px;
             z-index: 1000;
         }
         
-        .blue-toast {
-            background: linear-gradient(135deg, #0a96ff, #0033aa);
+        .user-side-toast {
+            background: linear-gradient(135deg, #0066cc, #003366);
             color: white;
-            box-shadow: 0 0 20px rgba(10, 150, 255, 0.5);
+            box-shadow: 0 0 25px rgba(0, 100, 255, 0.5);
         }
         
-        .red-toast {
-            background: linear-gradient(135deg, #ff3232, #aa0000);
-            color: white;
-            box-shadow: 0 0 20px rgba(255, 50, 50, 0.5);
-        }
-        
-        .spectator-toast {
-            background: linear-gradient(135deg, #9d85f7, #6b4fbf);
-            color: white;
-            box-shadow: 0 0 20px rgba(157, 133, 247, 0.5);
-        }
-        
-        /* Spectator Notice */
         .spectator-notice {
             position: fixed;
             bottom: 20px;
             left: 50%;
             transform: translateX(-50%);
             padding: 10px 20px;
-            background: rgba(157, 133, 247, 0.2);
-            border: 1px solid #9d85f7;
+            background: rgba(150, 100, 255, 0.2);
+            border: 1px solid #6644ff;
             border-radius: 6px;
-            color: #9d85f7;
-            font-size: 0.8rem;
+            color: #8866ff;
+            font-size: 0.75rem;
         }
         
         /* Responsive */
-        @media (max-width: 1400px) {
-            .lck-draft-wrapper {
-                grid-template-columns: 1fr 350px 1fr;
-            }
-        }
-        
-        @media (max-width: 1100px) {
+        @media (max-width: 1200px) {
             .lck-draft-wrapper {
                 grid-template-columns: 1fr;
-                grid-template-rows: auto auto auto;
             }
-            
-            .blue-team, .red-team {
-                align-items: center;
+            .blue-column, .red-column {
+                border: none;
+                border-bottom: 1px solid #333;
             }
-            
             .picks-column {
                 flex-direction: row !important;
                 flex-wrap: wrap;
                 justify-content: center;
             }
-            
-            .pick-slot {
-                min-width: 150px;
-            }
         }
     `;
-    document.head.appendChild(style);
+    document.head.appendChild(css);
 
-    // Initialize draft
+    // Initialize
     document.addEventListener('DOMContentLoaded', function() {
-        initializeDraft();
         setupEventListeners();
         loadDraftState();
         startTimer();
-        
-        // If user has a pre-assigned side, set it up
-        if (draftState.userSide) {
-            setupPreAssignedSide();
-        }
+        if (draftState.userSide) setupPreAssignedSide();
     });
     
     function setupPreAssignedSide() {
         if (draftState.userSide === 'spectator') {
             disableAllInteraction();
-            return;
         }
-        
-        // Hide team selection modal and set the side
-        var modal = document.getElementById('team-selection-modal');
-        if (modal) {
-            modal.style.display = 'none';
-        }
-        
-        // Store the side in localStorage
         localStorage.setItem('draft_selection_' + draftState.sessionId, JSON.stringify({
-            team: draftState.userSide === 'blue' ? '{{ draft_session.team_blue_id }}' : '{{ draft_session.team_red_id }}',
             side: draftState.userSide
         }));
-        
-        draftState.userTeam = draftState.userSide === 'blue' ? '{{ draft_session.team_blue_id }}' : '{{ draft_session.team_red_id }}';
     }
     
     function disableAllInteraction() {
-        var championCards = document.querySelectorAll('.champion-card');
-        for (var i = 0; i < championCards.length; i++) {
-            championCards[i].style.pointerEvents = 'none';
-            championCards[i].style.opacity = '0.5';
-        }
-        
+        document.querySelectorAll('.champion-tile').forEach(function(el) {
+            el.style.pointerEvents = 'none';
+            el.style.opacity = '0.4';
+        });
         var blueBtn = document.getElementById('blue-ready-btn');
         var redBtn = document.getElementById('red-ready-btn');
-        
         if (blueBtn) blueBtn.style.display = 'none';
         if (redBtn) redBtn.style.display = 'none';
-        
-        var searchInput = document.getElementById('search-champion');
-        var filterSelect = document.getElementById('filter-position');
-        if (searchInput) searchInput.disabled = true;
-        if (filterSelect) filterSelect.disabled = true;
-    }
-
-    function initializeDraft() {
-        updateChampionGrid();
     }
 
     function setupEventListeners() {
-        // Champion selection
-        var championCards = document.querySelectorAll('.champion-card');
-        for (var i = 0; i < championCards.length; i++) {
-            championCards[i].addEventListener('click', function() {
-                selectChampion(this);
-            });
-        }
-
-        // Search and filter
+        document.querySelectorAll('.champion-tile').forEach(function(tile) {
+            tile.addEventListener('click', function() { selectChampion(this); });
+        });
         document.getElementById('search-champion').addEventListener('input', filterChampions);
         document.getElementById('filter-position').addEventListener('change', filterChampions);
-
-        // Action buttons
         document.getElementById('refresh-draft').addEventListener('click', loadDraftState);
-
-        // Ready buttons
-        var blueReadyBtn = document.getElementById('blue-ready-btn');
-        var redReadyBtn = document.getElementById('red-ready-btn');
-
-        if (blueReadyBtn) {
-            blueReadyBtn.addEventListener('click', function() {
-                setTeamReady('blue');
-            });
-        }
-
-        if (redReadyBtn) {
-            redReadyBtn.addEventListener('click', function() {
-                setTeamReady('red');
-            });
-        }
+        
+        var blueBtn = document.getElementById('blue-ready-btn');
+        var redBtn = document.getElementById('red-ready-btn');
+        if (blueBtn) blueBtn.addEventListener('click', function() { setTeamReady('blue'); });
+        if (redBtn) redBtn.addEventListener('click', function() { setTeamReady('red'); });
     }
 
-    function selectChampion(card) {
+    function selectChampion(tile) {
         if (draftState.userSide === 'spectator') {
-            alert('Spectators cannot participate in the draft.');
+            alert('Spectators cannot participate.');
             return;
         }
-        
         if (draftState.userSide && draftState.userSide !== draftState.currentTurn) {
-            alert('It is not your team\'s turn.');
+            alert('Not your turn.');
+            return;
+        }
+        if (!draftState.isActive || !draftState.matchStarted) {
+            alert('Cannot select now.');
+            return;
+        }
+        if (tile.classList.contains('unavailable')) {
+            alert('Champion unavailable.');
             return;
         }
         
-        if (!draftState.isActive) {
-            alert('The draft is complete.');
-            return;
-        }
-
-        if (!draftState.matchStarted) {
-            alert('Please wait for both teams to be ready.');
-            return;
-        }
-
-        if (card.classList.contains('unavailable')) {
-            alert('This champion has already been banned or picked!');
-            return;
-        }
-
-        draftState.selectedChampion = parseInt(card.dataset.championId);
-
-        var allCards = document.querySelectorAll('.champion-card');
-        for (var i = 0; i < allCards.length; i++) {
-            allCards[i].classList.remove('selected');
-        }
-        card.classList.add('selected');
-
+        draftState.selectedChampion = parseInt(tile.dataset.championId);
+        document.querySelectorAll('.champion-tile').forEach(function(t) { t.classList.remove('selected'); });
+        tile.classList.add('selected');
         executeAction();
     }
 
     function executeAction() {
-        if (!draftState.selectedChampion) {
-            alert('Please select a champion');
-            return;
-        }
-
+        if (!draftState.selectedChampion) return;
+        
         var actionType = draftState.currentPhase === 'bans' ? 'ban' : 'pick';
-
-        var url = '/api/draft/sessions/' + draftState.sessionId + '/action';
-        fetch(url, {
+        
+        fetch('/api/draft/sessions/' + draftState.sessionId + '/action', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 action_type: actionType,
                 champion_id: draftState.selectedChampion,
-                team: draftState.currentTurn,
-                player_id: draftState.selectedPlayer,
-                position: draftState.selectedPosition
+                team: draftState.currentTurn
             })
         })
-        .then(function(response) { return response.json(); })
+        .then(function(r) { return r.json(); })
         .then(function(data) {
-            if (data.error) {
-                alert('Error: ' + data.error);
-            } else {
-                loadDraftState();
-                resetSelection();
-            }
+            if (data.error) alert('Error: ' + data.error);
+            else { loadDraftState(); resetSelection(); }
         })
-        .catch(function(error) {
-            console.error('Draft action error:', error);
-            alert('Failed to execute action');
-        });
+        .catch(function(e) { console.error(e); alert('Action failed'); });
     }
 
     function resetSelection() {
         draftState.selectedChampion = null;
-        draftState.selectedPlayer = null;
-        draftState.selectedPosition = null;
-        var cards = document.querySelectorAll('.champion-card');
-        for (var i = 0; i < cards.length; i++) {
-            cards[i].classList.remove('selected');
-        }
+        document.querySelectorAll('.champion-tile').forEach(function(t) { t.classList.remove('selected'); });
     }
 
     function loadDraftState() {
-        var url = '/api/draft/sessions/' + draftState.sessionId;
-        fetch(url)
-            .then(function(response) { return response.json(); })
-            .then(function(data) {
-                if (data.error) {
-                    console.error('Failed to load draft state:', data.error);
-                    return;
-                }
-
-                var session = data.session;
-                var game = data.game;
-
-                draftState.currentTurn = session.current_team_turn;
-                draftState.currentPhase = session.current_phase;
-                draftState.stepNumber = session.step_number;
-                draftState.isActive = session.is_active;
-
-                if (game) {
-                    draftState.blueReady = game.blue_ready;
-                    draftState.redReady = game.red_ready;
-                    draftState.matchStarted = game.match_started;
-                    updateReadyStatus();
-                    updateBans(game);
-                    updatePicks(game);
-                }
-
-                if (session.timer_remaining !== undefined) {
-                    draftState.timerRemaining = session.timer_remaining;
-                    updateTimerDisplay(session.timer_remaining);
-                }
-
-                updateTurnIndicator(session);
-                
-                if (!session.is_active || (game && !game.match_started)) {
-                    disableChampionSelection();
-                } else {
-                    enableChampionSelection();
-                }
-                
-                updateChampionGrid();
-            })
-            .catch(function(error) {
-                console.error('Error loading draft state:', error);
-            });
-    }
-
-    function startTimer() {
-        setInterval(function() {
-            if (draftState.isActive && draftState.matchStarted && draftState.timerRemaining > 0) {
-                draftState.timerRemaining--;
-                updateTimerDisplay(draftState.timerRemaining);
+        fetch('/api/draft/sessions/' + draftState.sessionId)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.error) return;
+            var session = data.session;
+            var game = data.game;
+            
+            draftState.currentTurn = session.current_team_turn;
+            draftState.currentPhase = session.current_phase;
+            draftState.isActive = session.is_active;
+            
+            if (game) {
+                draftState.blueReady = game.blue_ready;
+                draftState.redReady = game.red_ready;
+                draftState.matchStarted = game.match_started;
+                updateBans(game);
+                updatePicks(game);
+                updateReadyStatus();
             }
-        }, 1000);
-    }
-
-    function updateTimerDisplay(seconds) {
-        var timerElement = document.getElementById('draft-timer');
-        if (timerElement) {
-            timerElement.textContent = seconds;
-            if (seconds <= 5) {
-                timerElement.style.color = '#ff4444';
-            } else {
-                timerElement.style.color = '#fff';
+            
+            if (session.timer_remaining !== undefined) {
+                draftState.timerRemaining = session.timer_remaining;
+                document.getElementById('draft-timer').textContent = session.timer_remaining;
             }
-        }
+            
+            updateTurnIndicator(session);
+            updatePhaseLabel(session);
+            updateChampionGrid();
+        })
+        .catch(function(e) { console.error(e); });
     }
 
     function updateTurnIndicator(session) {
-        var turnIndicator = document.querySelector('.turn-indicator');
-        var phaseLabel = document.querySelector('.phase-label');
-        var selectionStatus = document.getElementById('selection-status');
-
-        if (turnIndicator) {
-            turnIndicator.className = 'turn-indicator ' + session.current_team_turn + '-turn';
-            turnIndicator.querySelector('.turn-text').textContent = session.team_blue.name + ' vs ' + session.team_red.name;
-        }
-
-        if (phaseLabel) {
-            var phaseNum = Math.ceil(session.step_number / 2);
-            phaseLabel.textContent = session.current_phase.toUpperCase() + ' ' + phaseNum;
-        }
-
-        if (selectionStatus) {
-            if (!session.is_active) {
-                selectionStatus.textContent = 'Draft complete';
-            } else if (!draftState.matchStarted) {
-                selectionStatus.textContent = 'Waiting for both teams to ready...';
-            } else {
-                selectionStatus.textContent = 'Select a champion to ' + (session.current_phase === 'bans' ? 'ban' : 'pick');
-            }
+        var turnEl = document.querySelector('.turn-display');
+        var turnText = document.querySelector('.turn-text');
+        if (turnEl && turnText) {
+            turnEl.className = 'turn-display ' + session.current_team_turn + '-turn';
+            turnText.textContent = session.current_team_turn === 'blue' ? 'Blue Team Picking' : 'Red Team Picking';
         }
         
         // Update active slots
-        var blueSlots = document.querySelectorAll('.blue-team .pick-slot, .blue-team .ban-slot');
-        var redSlots = document.querySelectorAll('.red-team .pick-slot, .red-team .ban-slot');
+        document.querySelectorAll('.pick-slot, .ban-slot').forEach(function(s) { s.classList.remove('active'); });
+        if (session.is_active) {
+            var activeClass = session.current_team_turn + '-team';
+            document.querySelectorAll('.' + activeClass + ' .pick-slot, .' + activeClass + ' .ban-slot').forEach(function(s) {
+                s.classList.add('active');
+            });
+        }
+    }
+
+    function updatePhaseLabel(session) {
+        var phaseEl = document.querySelector('.phase-text');
+        if (phaseEl) {
+            var phaseNum = Math.ceil(session.step_number / 2);
+            phaseEl.textContent = (session.current_phase === 'bans' ? 'BAN PHASE ' : 'PICK PHASE ') + phaseNum;
+        }
         
-        blueSlots.forEach(function(slot) { slot.classList.remove('active'); });
-        redSlots.forEach(function(slot) { slot.classList.remove('active'); });
-        
-        if (session.is_active && session.current_team_turn === 'blue') {
-            blueSlots.forEach(function(slot) { slot.classList.add('active'); });
-        } else if (session.is_active && session.current_team_turn === 'red') {
-            redSlots.forEach(function(slot) { slot.classList.add('active'); });
+        var hintEl = document.getElementById('selection-status');
+        if (hintEl) {
+            if (!session.is_active) hintEl.textContent = 'Draft Complete';
+            else if (!draftState.matchStarted) hintEl.textContent = 'Waiting for teams to ready...';
+            else hintEl.textContent = 'Select a champion to ' + (session.current_phase === 'bans' ? 'ban' : 'pick');
         }
     }
 
     function updateBans(game) {
         if (!game) return;
-        
-        var bans = { 
-            blue: (game.bans_blue && Array.isArray(game.bans_blue)) ? game.bans_blue : [], 
-            red: (game.bans_red && Array.isArray(game.bans_red)) ? game.bans_red : [] 
-        };
-        var teams = ['blue', 'red'];
-
-        for (var t = 0; t < teams.length; t++) {
-            var team = teams[t];
-            var teamBans = bans[team];
-            
+        ['blue', 'red'].forEach(function(team) {
+            var bans = game['bans_' + team] || [];
             for (var i = 0; i < draftState.bansPerTeam; i++) {
                 var slot = document.querySelector('.' + team + '-team .ban-slot[data-slot="' + i + '"]');
                 if (slot) {
                     var img = slot.querySelector('.ban-champion');
-                    
-                    if (i < teamBans.length && teamBans[i]) {
-                        var championId = teamBans[i];
-                        var championIdNum = parseInt(championId);
-                        var champion = championMap[championId] || championMap[championIdNum];
-                        
-                        if (champion) {
-                            img.src = 'https://ddragon.leagueoflegends.com/cdn/img/champion/splash/' + champion.name + '_0.jpg';
+                    if (bans[i]) {
+                        var champ = championMap[bans[i]] || championMap[parseInt(bans[i])];
+                        if (champ) {
+                            img.src = 'https://ddragon.leagueoflegends.com/cdn/img/champion/splash/' + champ.name + '_0.jpg';
                             slot.classList.add('has-champion');
                         }
                     } else {
@@ -1189,36 +1016,22 @@
                     }
                 }
             }
-        }
+        });
     }
 
     function updatePicks(game) {
         if (!game) return;
-        
-        var picks = { 
-            blue: (game.picks_blue && Array.isArray(game.picks_blue)) ? game.picks_blue : [], 
-            red: (game.picks_red && Array.isArray(game.picks_red)) ? game.picks_red : [] 
-        };
-        var teams = ['blue', 'red'];
-
-        for (var t = 0; t < teams.length; t++) {
-            var team = teams[t];
-            var teamPicks = picks[team];
-            
+        ['blue', 'red'].forEach(function(team) {
+            var picks = game['picks_' + team] || [];
             for (var i = 0; i < draftState.picksPerTeam; i++) {
                 var slot = document.querySelector('.' + team + '-team .pick-slot[data-slot="' + i + '"]');
                 if (slot) {
                     var img = slot.querySelector('.pick-champion');
-                    var empty = slot.querySelector('.pick-empty');
-                    
-                    if (i < teamPicks.length && teamPicks[i]) {
-                        var pick = teamPicks[i];
-                        var championId = pick.champion_id;
-                        var championIdNum = parseInt(championId);
-                        var champion = championMap[championId] || championMap[championIdNum];
-                        
-                        if (champion) {
-                            img.src = 'https://ddragon.leagueoflegends.com/cdn/img/champion/splash/' + champion.name + '_0.jpg';
+                    var empty = slot.querySelector('.pick-empty-box');
+                    if (picks[i] && picks[i].champion_id) {
+                        var champ = championMap[picks[i].champion_id] || championMap[parseInt(picks[i].champion_id)];
+                        if (champ) {
+                            img.src = 'https://ddragon.leagueoflegends.com/cdn/img/champion/splash/' + champ.name + '_0.jpg';
                             img.style.display = 'block';
                             if (empty) empty.style.display = 'none';
                         }
@@ -1229,156 +1042,104 @@
                     }
                 }
             }
+        });
+    }
+
+    function updateReadyStatus() {
+        var blueIndicator = document.getElementById('blue-ready-indicator');
+        var redIndicator = document.getElementById('red-ready-indicator');
+        var blueBtn = document.getElementById('blue-ready-btn');
+        var redBtn = document.getElementById('red-ready-btn');
+        
+        if (blueIndicator) blueIndicator.className = 'ready-dot' + (draftState.blueReady ? ' active' : '');
+        if (redIndicator) redIndicator.className = 'ready-dot' + (draftState.redReady ? ' active' : '');
+        
+        if (blueBtn) {
+            blueBtn.disabled = draftState.blueReady || draftState.matchStarted;
+            if (draftState.blueReady) { blueBtn.textContent = 'READY!'; blueBtn.style.background = '#00aa44'; }
+        }
+        if (redBtn) {
+            redBtn.disabled = draftState.redReady || draftState.matchStarted;
+            if (draftState.redReady) { redBtn.textContent = 'READY!'; redBtn.style.background = '#00aa44'; }
         }
     }
 
     function updateChampionGrid() {
-        var url = '/api/draft/available/' + draftState.sessionId;
-        fetch(url)
-            .then(function(response) { return response.json(); })
-            .then(function(data) {
-                var availableIds = {};
-                for (var i = 0; i < data.length; i++) {
-                    availableIds[data[i].id] = true;
+        fetch('/api/draft/available/' + draftState.sessionId)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            var available = {};
+            data.forEach(function(c) { available[c.id] = true; });
+            document.querySelectorAll('.champion-tile').forEach(function(tile) {
+                var id = parseInt(tile.dataset.championId);
+                if (available[id]) {
+                    tile.classList.add('available');
+                    tile.classList.remove('unavailable');
+                } else {
+                    tile.classList.add('unavailable');
+                    tile.classList.remove('available');
                 }
-                var cards = document.querySelectorAll('.champion-card');
-                for (var i = 0; i < cards.length; i++) {
-                    var championId = parseInt(cards[i].dataset.championId);
-                    if (availableIds[championId]) {
-                        cards[i].classList.add('available');
-                        cards[i].classList.remove('unavailable');
-                    } else {
-                        cards[i].classList.add('unavailable');
-                        cards[i].classList.remove('available');
-                    }
-                }
-            })
-            .catch(function(error) {
-                console.error('Error fetching available champions:', error);
             });
+        })
+        .catch(function(e) { console.error(e); });
     }
 
     function filterChampions() {
-        var searchTerm = document.getElementById('search-champion').value.toLowerCase();
-        var positionFilter = document.getElementById('filter-position').value.toLowerCase();
-
-        var cards = document.querySelectorAll('.champion-card');
-        for (var i = 0; i < cards.length; i++) {
-            var name = cards[i].dataset.championName.toLowerCase();
-            var champion = championMap[parseInt(cards[i].dataset.championId)];
-            var matchesSearch = name.indexOf(searchTerm) !== -1;
-            var matchesPosition = !positionFilter || (champion.tags && champion.tags.some(function(t) { return t.toLowerCase() === positionFilter; }));
-
-            cards[i].style.display = (matchesSearch && matchesPosition) ? '' : 'none';
-        }
-    }
-
-    function updateReadyStatus() {
-        var blueBtn = document.getElementById('blue-ready-btn');
-        var redBtn = document.getElementById('red-ready-btn');
-
-        if (blueBtn) {
-            blueBtn.disabled = draftState.blueReady || draftState.matchStarted;
-            if (draftState.blueReady) {
-                blueBtn.textContent = 'READY!';
-                blueBtn.style.background = '#4caf50';
-            }
-        }
-        if (redBtn) {
-            redBtn.disabled = draftState.redReady || draftState.matchStarted;
-            if (draftState.redReady) {
-                redBtn.textContent = 'READY!';
-                redBtn.style.background = '#4caf50';
-            }
-        }
-    }
-
-    function setTeamReady(teamColor) {
-        if (draftState.userSide === 'spectator') {
-            alert('Spectators cannot ready for the draft.');
-            return;
-        }
+        var search = document.getElementById('search-champion').value.toLowerCase();
+        var role = document.getElementById('filter-position').value.toLowerCase();
         
-        if (draftState.userSide && draftState.userSide !== teamColor) {
-            alert('You are on the ' + draftState.userSide + ' side.');
-            return;
-        }
-        
-        var url = '/api/draft/sessions/' + draftState.sessionId + '/game/' + draftState.currentGameNumber + '/ready';
-        fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                team: teamColor
-            })
-        })
-        .then(function(response) { return response.json(); })
-        .then(function(data) {
-            if (data.error) {
-                alert('Error: ' + data.error);
-            } else {
-                if (teamColor === 'blue') {
-                    draftState.blueReady = true;
-                } else {
-                    draftState.redReady = true;
-                }
-                updateReadyStatus();
-                loadDraftState();
-            }
-        })
-        .catch(function(error) {
-            console.error('Error setting team ready:', error);
-            alert('Failed to set ready status');
+        document.querySelectorAll('.champion-tile').forEach(function(tile) {
+            var name = tile.dataset.championName.toLowerCase();
+            var champ = championMap[parseInt(tile.dataset.championId)];
+            var matchesSearch = name.indexOf(search) !== -1;
+            var matchesRole = !role || (champ && champ.tags && champ.tags.some(function(t) { return t.toLowerCase() === role; }));
+            tile.style.display = (matchesSearch && matchesRole) ? '' : 'none';
         });
+    }
+
+    function setTeamReady(team) {
+        if (draftState.userSide === 'spectator') { alert('Spectators cannot ready.'); return; }
+        if (draftState.userSide && draftState.userSide !== team) { alert('Wrong side.'); return; }
+        
+        fetch('/api/draft/sessions/' + draftState.sessionId + '/game/' + draftState.currentGameNumber + '/ready', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ team: team })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.error) alert('Error: ' + data.error);
+            else { loadDraftState(); }
+        })
+        .catch(function(e) { console.error(e); });
     }
     
     function leaveDraft() {
-        if (!confirm('Are you sure you want to leave this draft?')) {
-            return;
-        }
-        
-        var formData = new FormData();
-        formData.append('side', draftState.userSide);
-        
+        if (!confirm('Leave this draft?')) return;
         fetch('/draft/' + draftState.sessionId + '/leave', {
             method: 'POST',
-            body: formData
+            body: new FormData().append('side', draftState.userSide)
         })
-        .then(function(response) {
+        .then(function() {
             localStorage.removeItem('draft_selection_' + draftState.sessionId);
             window.location.href = '/draft';
-        })
-        .catch(function(error) {
-            console.error('Error leaving draft:', error);
-            alert('Failed to leave draft');
         });
     }
 
-    function disableChampionSelection() {
-        var cards = document.querySelectorAll('.champion-card');
-        for (var i = 0; i < cards.length; i++) {
-            cards[i].style.pointerEvents = 'none';
-            cards[i].style.opacity = '0.3';
-        }
-        
-        document.getElementById('search-champion').disabled = true;
-        document.getElementById('filter-position').disabled = true;
-    }
-    
-    function enableChampionSelection() {
-        var cards = document.querySelectorAll('.champion-card');
-        for (var i = 0; i < cards.length; i++) {
-            cards[i].style.pointerEvents = 'auto';
-            cards[i].style.opacity = '1';
-        }
-        
-        document.getElementById('search-champion').disabled = false;
-        document.getElementById('filter-position').disabled = false;
+    function startTimer() {
+        setInterval(function() {
+            if (draftState.isActive && draftState.matchStarted && draftState.timerRemaining > 0) {
+                draftState.timerRemaining--;
+                var el = document.getElementById('draft-timer');
+                if (el) {
+                    el.textContent = draftState.timerRemaining;
+                    el.style.color = draftState.timerRemaining <= 5 ? '#ff4444' : '#fff';
+                }
+            }
+        }, 1000);
     }
 
-    // Auto-refresh every 5 seconds
+    // Auto-refresh
     setInterval(loadDraftState, 5000);
 </script>
 {% endif %}
