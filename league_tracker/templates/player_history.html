@@ -1,47 +1,43 @@
 {% extends "base.html" %}
 
-{% block title %}{{ player.display_name }} - League Match History{% endblock %}
+{% block title %}{{ player.display_name }} - Ranked Match History{% endblock %}
 
 {% block content %}
 <div class="page-header">
     <h1>{{ player.display_name }}</h1>
-    <p class="team-meta">League Tournament Match History</p>
+    <p class="team-meta">Ranked Match History</p>
 </div>
 
 <!-- Match Type Tabs -->
 <div class="match-type-tabs">
-    <a href="{{ url_for('player_league_history', puuid=player.puuid, type='all') }}" 
-       class="tab {{ 'active' if not queue_type or queue_type == 'all' }}">
-        All Matches
-    </a>
     <a href="{{ url_for('player_league_history', puuid=player.puuid, type='ranked') }}" 
-       class="tab {{ 'active' if queue_type == 'ranked' }}">
+       class="tab {{ 'active' if queue_type == 'ranked' or not queue_type }}">
         Ranked
     </a>
-    <a href="{{ url_for('player_league_history', puuid=player.puuid, type='normal') }}" 
-       class="tab {{ 'active' if queue_type == 'normal' }}">
-        Normal
+    <a href="{{ url_for('player_league_history', puuid=player.puuid, type='tournament') }}" 
+       class="tab {{ 'active' if queue_type == 'tournament' }}">
+        Tournament
     </a>
 </div>
 
 <div class="player-stats-summary">
     <div class="stats-grid">
         <div class="stat-card">
-            <div class="stat-number">{{ history|length }}</div>
+            <div class="stat-number">{{ participants|length }}</div>
             <div class="stat-label">Games</div>
         </div>
-        {% set wins = history|selectattr('win')|list|length %}
+        {% set wins = participants|selectattr('win')|list|length %}
         <div class="stat-card">
             <div class="stat-number" style="color: var(--success);">{{ wins }}</div>
             <div class="stat-label">Wins</div>
         </div>
         <div class="stat-card">
-            <div class="stat-number" style="color: var(--error);">{{ history|length - wins }}</div>
+            <div class="stat-number" style="color: var(--error);">{{ participants|length - wins }}</div>
             <div class="stat-label">Losses</div>
         </div>
-        {% set total_kills = history|sum(attribute='kills') %}
-        {% set total_deaths = history|sum(attribute='deaths') %}
-        {% set total_assists = history|sum(attribute='assists') %}
+        {% set total_kills = participants|sum(attribute='kills') %}
+        {% set total_deaths = participants|sum(attribute='deaths') %}
+        {% set total_assists = participants|sum(attribute='assists') %}
         <div class="stat-card">
             <div class="stat-number">{{ total_kills + total_assists }}/{{ total_deaths }}</div>
             <div class="stat-label">KDA</div>
@@ -49,9 +45,9 @@
     </div>
 </div>
 
-{% if history %}
+{% if participants %}
 <div class="matches-list">
-    {% for match in history %}
+    {% for match in participants %}
     <div class="match-card {{ 'win' if match.win else 'loss' }}">
         <div class="match-result">
             <span class="result-badge {{ 'win' if match.win else 'loss' }}">

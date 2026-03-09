@@ -140,7 +140,7 @@ def create_app():
     def player_league_history(puuid):
         """Player match history page."""
         player = Player.query.filter_by(puuid=puuid).first_or_404()
-        queue_type = request.args.get('type', 'all')
+        queue_type = request.args.get('type', 'ranked')  # Default to ranked
         
         # Always join with Match to allow ordering by game_creation
         query = MatchParticipant.query.filter_by(puuid=puuid).join(Match)
@@ -148,12 +148,10 @@ def create_app():
         if queue_type == 'ranked':
             # Filter for ranked games (queue_id 400, 420, 440)
             query = query.filter(Match.queue_id.in_([400, 420, 440]))
-        elif queue_type == 'normal':
-            # Filter for normal games (queue_id 430, etc.)
-            query = query.filter(Match.queue_id.in_([430, 2000]))
         elif queue_type == 'tournament':
             # Filter for tournament games
             query = query.filter(Match.queue_id.in_([0, 3130]))
+        # 'all' removed - now only shows ranked or tournament
         
         participants = query.order_by(Match.game_creation.desc()).all()
         return render_template('player_history.html', player=player, participants=participants, queue_type=queue_type)
