@@ -104,7 +104,7 @@ Team.players = db.relationship('Player', secondary=team_players,
 
 class Match(db.Model):
     """Match model representing a league match."""
-    __tablename__ = 'match'
+    __tablename__ = 'match_table'
     
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     match_id = db.Column(db.String(50), unique=True, nullable=False)
