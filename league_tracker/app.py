@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 # Import config using absolute import for gunicorn compatibility
 from league_tracker.config import SECRET_KEY, DEBUG, SQLALCHEMY_DATABASE_URI, SQLALCHEMY_TRACK_MODIFICATIONS, \
                    RIOT_API_KEY, validate_api_key, AUTO_COLLECT_ENABLED, AUTO_COLLECT_INTERVAL
-from league_tracker.src.database import db, Team, Player, Match, MatchParticipant, Admin, team_players, TournamentCode, DraftSession, DraftGame, DraftStep
+from league_tracker.src.database import db, Team, Player, Match, MatchParticipant, Admin, team_players, TournamentCode, DraftSession, DraftGame, DraftStep, InhouseMatch, InhouseParticipant
 from league_tracker.src.api.riot_client import RiotClient, RiotAPIError
 from league_tracker.src.api.match_collector import MatchCollector, run_collect
 from league_tracker.src.utils.stats_calculator import StatsCalculator
@@ -406,6 +406,162 @@ def create_app():
         """Get recent matches."""
         matches = Match.query.order_by(Match.game_creation.desc()).limit(20).all()
         return jsonify([match.to_dict() for match in matches])
+    
+    # ==================== INHOUSE STATS ROUTES ====================
+    
+    @app.route('/inhouse-stats')
+    def inhouse_stats():
+        """Inhouse stats dashboard page."""
+        # Get recent matches for display
+        recent_matches = InhouseMatch.query.order_by(InhouseMatch.game_date.desc()).limit(10).all()
+        # Get player count
+        player_count = db.session.query(InhouseParticipant.summoner_name).distinct().count()
+        # Get total matches
+        total_matches = InhouseMatch.query.count()
+        # Get game nights (unique dates)
+        game_nights = db.session.query(db.func.count(db.func.distinct(db.func.date(InhouseMatch.game_date)))).scalar()
+        
+        return render_template('inhouse_stats.html', 
+                             recent_matches=recent_matches,
+                             player_count=player_count,
+                             total_matches=total_matches,
+                             game_nights=game_nights or 0)
+    
+    @app.route('/api/inhouse/leaderboard')
+    def api_inhouse_leaderboard():
+        """Get inhouse stats leaderboard."""
+        from sqlalchemy import func
+        
+        # Get query parameters
+        stat = request.args.get('stat', 'kda')
+        min_games = int(request.args.get('min_games', 3))
+        
+        # Validate stat
+        valid_stats = ['kda', 'kills', 'deaths', 'assists', 'cs', 'gold_earned', 
+                      'vision_score', 'wards_placed', 'damage_per_min', 'win_rate']
+        if stat not in valid_stats:
+            stat = 'kda'
+        
+        # Build query
+        if stat == 'win_rate':
+            # Special case for win rate
+            player_stats = db.session.query(
+                InhouseParticipant.summoner_name,
+                InhouseParticipant.tag,
+                func.count(InhouseParticipant.id).label('games'),
+                func.sum(db.case((InhouseParticipant.win == True, 1), else_=0)).label('wins'),
+                func.avg(InhouseParticipant.kda).label('kda'),
+                func.avg(InhouseParticipant.cs_per_min).label('cs_per_min'),
+                func.avg(InhouseParticipant.gold_per_min).label('gold_per_min'),
+                func.avg(InhouseParticipant.vision_score).label('vision_score')
+            ).group_by(
+                InhouseParticipant.summoner_name,
+                InhouseParticipant.tag
+            ).having(
+                func.count(InhouseParticipant.id) >= min_games
+            ).all()
+            
+            results = []
+            for row in player_stats:
+                win_rate = (row.wins / row.games * 100) if row.games > 0 else 0
+                results.append({
+                    'summoner_name': row.summoner_name,
+                    'tag': row.tag,
+                    'games': row.games,
+                    'wins': row.wins,
+                    'losses': row.games - row.wins,
+                    'win_rate': round(win_rate, 1),
+                    'kda': round(row.kda or 0, 2),
+                    'cs_per_min': round(row.cs_per_min or 0, 1),
+                    'gold_per_min': round(row.gold_per_min or 0, 0),
+                    'vision_score': round(row.vision_score or 0, 1)
+                })
+            
+            results.sort(key=lambda x: x['win_rate'], reverse=True)
+        else:
+            # Regular stats
+            stat_col = getattr(InhouseParticipant, stat, InhouseParticipant.kda)
+            
+            player_stats = db.session.query(
+                InhouseParticipant.summoner_name,
+                InhouseParticipant.tag,
+                func.count(InhouseParticipant.id).label('games'),
+                func.avg(stat_col).label('stat_avg'),
+                func.avg(InhouseParticipant.kda).label('kda'),
+                func.sum(db.case((InhouseParticipant.win == True, 1), else_=0)).label('wins')
+            ).group_by(
+                InhouseParticipant.summoner_name,
+                InhouseParticipant.tag
+            ).having(
+                func.count(InhouseParticipant.id) >= min_games
+            ).all()
+            
+            results = []
+            for row in player_stats:
+                results.append({
+                    'summoner_name': row.summoner_name,
+                    'tag': row.tag,
+                    'games': row.games,
+                    'wins': row.wins,
+                    'losses': row.games - row.wins,
+                    'win_rate': round(row.wins / row.games * 100, 1) if row.games > 0 else 0,
+                    'kda': round(row.kda or 0, 2),
+                    stat: round(row.stat_avg or 0, 2)
+                })
+            
+            results.sort(key=lambda x: x.get(stat, 0), reverse=True)
+        
+        return jsonify(results)
+    
+    @app.route('/api/inhouse/matches')
+    def api_inhouse_matches():
+        """Get all inhouse matches."""
+        matches = InhouseMatch.query.order_by(InhouseMatch.game_date.desc()).all()
+        return jsonify([{
+            'id': m.id,
+            'match_id': m.match_id,
+            'game_date': m.game_date.isoformat() if m.game_date else None,
+            'game_duration_min': m.game_duration_min,
+            'queue_id': m.queue_id,
+            'participant_count': m.participants.count()
+        } for m in matches])
+    
+    @app.route('/api/inhouse/participants/<match_id>')
+    def api_inhouse_participants(match_id):
+        """Get participants for a specific match."""
+        match = InhouseMatch.query.get_or_404(match_id)
+        participants = InhouseParticipant.query.filter_by(match_id=match.id).all()
+        return jsonify([p.to_dict() for p in participants])
+    
+    @app.route('/api/inhouse/champions')
+    def api_inhouse_champions():
+        """Get champion stats."""
+        from sqlalchemy import func
+        
+        champ_stats = db.session.query(
+            InhouseParticipant.champion,
+            func.count(InhouseParticipant.id).label('games'),
+            func.sum(db.case((InhouseParticipant.win == True, 1), else_=0)).label('wins'),
+            func.avg(InhouseParticipant.kda).label('kda')
+        ).group_by(
+            InhouseParticipant.champion
+        ).order_by(
+            func.count(InhouseParticipant.id).desc()
+        ).limit(20).all()
+        
+        results = []
+        for row in champ_stats:
+            wr = (row.wins / row.games * 100) if row.games > 0 else 0
+            results.append({
+                'champion': row.champion,
+                'games': row.games,
+                'wins': row.wins,
+                'losses': row.games - row.wins,
+                'win_rate': round(wr, 1),
+                'kda': round(row.kda or 0, 2)
+            })
+        
+        return jsonify(results)
     
     @app.route('/debug/env')
     def debug_env():

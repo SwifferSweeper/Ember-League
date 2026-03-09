@@ -19,6 +19,7 @@
                 <a href="{{ url_for('leaderboards') }}">Leaderboards</a>
                 <a href="{{ url_for('league_matches') }}">Matches</a>
                 <a href="{{ url_for('draft_index') }}">Draft Tool</a>
+                <a href="{{ url_for('inhouse_stats') }}">Inhouse Stats</a>
                 <a href="{{ url_for('signup') }}" class="btn btn-primary">Register Team</a>
                 {% if session.get('admin_id') %}
                     <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary">Admin</a>
