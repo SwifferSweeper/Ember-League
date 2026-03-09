@@ -136,6 +136,27 @@ def create_app():
         match = Match.query.filter_by(match_id=match_id).first_or_404()
         return render_template('match_detail.html', match=match)
     
+    @app.route('/players/<puuid>/history')
+    def player_league_history(puuid):
+        """Player match history page."""
+        player = Player.query.filter_by(puuid=puuid).first_or_404()
+        queue_type = request.args.get('type', 'all')
+        
+        query = MatchParticipant.query.filter_by(puuid=puuid)
+        
+        if queue_type == 'ranked':
+            # Filter for ranked games (queue_id 400, 420, 440)
+            query = query.join(Match).filter(Match.queue_id.in_([400, 420, 440]))
+        elif queue_type == 'normal':
+            # Filter for normal games (queue_id 430, etc.)
+            query = query.join(Match).filter(Match.queue_id.in_([430, 2000]))
+        elif queue_type == 'tournament':
+            # Filter for tournament games
+            query = query.join(Match).filter(Match.queue_id.in_([0, 3130]))
+        
+        participants = query.order_by(Match.game_creation.desc()).all()
+        return render_template('player_history.html', player=player, participants=participants, queue_type=queue_type)
+    
     @app.route('/signup', methods=['GET', 'POST'])
     def signup():
         """Team signup page."""
@@ -278,6 +299,86 @@ def create_app():
         teams = Team.query.all()
         return render_template('admin_tournament_codes.html', codes=codes, teams=teams)
     
+    @app.route('/admin/tournament-codes/add', methods=['POST'])
+    @admin_required
+    def admin_add_tournament_code():
+        """Add a new tournament code."""
+        code = request.form.get('code')
+        tournament_name = request.form.get('tournament_name')
+        team_id = request.form.get('team_id')
+        
+        if code:
+            tc = TournamentCode(
+                code=code,
+                tournament_name=tournament_name,
+                team_id=team_id if team_id else None
+            )
+            db.session.add(tc)
+            db.session.commit()
+            flash('Tournament code created', 'success')
+        
+        return redirect(url_for('admin_tournament_codes'))
+    
+    @app.route('/admin/tournament-codes/<int:code_id>/delete', methods=['POST'])
+    @admin_required
+    def admin_delete_tournament_code(code_id):
+        """Delete a tournament code."""
+        tc = TournamentCode.query.get_or_404(code_id)
+        db.session.delete(tc)
+        db.session.commit()
+        flash('Tournament code deleted', 'success')
+        return redirect(url_for('admin_tournament_codes'))
+    
+    @app.route('/admin/teams/<int:team_id>/delete', methods=['POST'])
+    @admin_required
+    def admin_delete_team(team_id):
+        """Delete a team."""
+        team = Team.query.get_or_404(team_id)
+        db.session.delete(team)
+        db.session.commit()
+        flash('Team deleted', 'success')
+        return redirect(url_for('admin_teams'))
+    
+    @app.route('/admin/drafts/<int:session_id>/toggle', methods=['POST'])
+    @admin_required
+    def admin_toggle_draft_active(session_id):
+        """Toggle draft active status."""
+        draft = DraftSession.query.get_or_404(session_id)
+        draft.is_active = not draft.is_active
+        if not draft.is_active:
+            draft.completed_at = db.func.current_timestamp()
+        db.session.commit()
+        flash(f'Draft marked as {"complete" if not draft.is_active else "active"}', 'success')
+        return redirect(url_for('admin_draft_detail', draft_id=session_id))
+    
+    @app.route('/admin/drafts/<int:session_id>/delete', methods=['POST'])
+    @admin_required
+    def admin_delete_draft(session_id):
+        """Delete a draft session."""
+        draft = DraftSession.query.get_or_404(session_id)
+        db.session.delete(draft)
+        db.session.commit()
+        flash('Draft deleted', 'success')
+        return redirect(url_for('admin_drafts'))
+    
+    @app.route('/admin/drafts/<int:session_id>/game/<int:game_number>/reset', methods=['POST'])
+    @admin_required
+    def admin_reset_game(session_id, game_number):
+        """Reset a draft game."""
+        game = DraftGame.query.filter_by(session_id=session_id, game_number=game_number).first_or_404()
+        game.bans_blue = []
+        game.bans_red = []
+        game.picks_blue = []
+        game.picks_red = []
+        game.ironman_assignments = {}
+        game.unavailable_champions = []
+        game.blue_ready = False
+        game.red_ready = False
+        game.is_completed = False
+        db.session.commit()
+        flash('Game reset successfully', 'success')
+        return redirect(url_for('admin_draft_detail', draft_id=session_id))
+    
     # ==================== DRAFT ROUTES ====================
     
     @app.route('/draft')
@@ -406,6 +507,27 @@ def create_app():
         """Get recent matches."""
         matches = Match.query.order_by(Match.game_creation.desc()).limit(20).all()
         return jsonify([match.to_dict() for match in matches])
+    
+    @app.route('/api/teams/<int:team_id>/collect', methods=['POST'])
+    def api_collect_team_matches(team_id):
+        """Collect matches for a specific team."""
+        team = Team.query.get_or_404(team_id)
+        riot_client = get_riot_client()
+        
+        if not riot_client:
+            flash('Riot API key not configured', 'error')
+            return redirect(url_for('team_detail', team_id=team_id))
+        
+        # Collect matches for all players on the team
+        for player in team.players:
+            try:
+                collector = MatchCollector(riot_client)
+                collector.collect_player_matches(player.puuid, player.region)
+            except Exception as e:
+                logger.warning(f"Failed to collect matches for {player.display_name}: {e}")
+        
+        flash(f'Match collection initiated for {team.name}', 'success')
+        return redirect(url_for('team_detail', team_id=team_id))
     
     # ==================== INHOUSE STATS ROUTES ====================
     
