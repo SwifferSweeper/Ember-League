@@ -182,6 +182,9 @@ def create_app():
         # 'all' removed - now only shows ranked or tournament
         
         participants = query.order_by(Match.game_creation.desc()).all()
+        # Add match_id to each participant for template access
+        for p in participants:
+            p._match_id = p.match.match_id if hasattr(p, 'match') and p.match else None
         return render_template('player_history.html', player=player, participants=participants, queue_type=queue_type)
     
     @app.route('/signup', methods=['GET', 'POST'])
