@@ -139,7 +139,7 @@ class MatchParticipant(db.Model):
     __tablename__ = 'match_participant'
     
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    match_id = db.Column(db.Integer, db.ForeignKey('match.id'), nullable=False)
+    match_id = db.Column(db.Integer, db.ForeignKey('match_table.id'), nullable=False)
     puuid = db.Column(db.String(100), nullable=False)
     
     # Player info
