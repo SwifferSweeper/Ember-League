@@ -20,7 +20,7 @@ class Admin(db.Model):
     """Admin user for managing the application."""
     __tablename__ = 'admins'
     
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
     password_hash = db.Column(db.String(128), nullable=False)
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
@@ -43,7 +43,7 @@ class Team(db.Model):
     """Team model representing a registered league team."""
     __tablename__ = 'teams'
     
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.String(100), nullable=False, unique=True)
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     
@@ -63,7 +63,7 @@ class Player(db.Model):
     """Player model representing a registered player."""
     __tablename__ = 'players'
     
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     puuid = db.Column(db.String(100), nullable=True)  # No UNIQUE constraint - may be NULL for players without Riot ID
     game_name = db.Column(db.String(50), nullable=False)
     tag_line = db.Column(db.String(10), nullable=False)
@@ -106,7 +106,7 @@ class Match(db.Model):
     """Match model representing a league match."""
     __tablename__ = 'match'
     
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     match_id = db.Column(db.String(50), unique=True, nullable=False)
     game_duration = db.Column(db.Integer)  # in seconds
     game_version = db.Column(db.String(20))
@@ -138,7 +138,7 @@ class MatchParticipant(db.Model):
     """Individual player stats in a match."""
     __tablename__ = 'match_participant'
     
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     match_id = db.Column(db.Integer, db.ForeignKey('match.id'), nullable=False)
     puuid = db.Column(db.String(100), nullable=False)
     
@@ -202,7 +202,7 @@ class TournamentCode(db.Model):
     """Tournament code tracking for automatic match detection."""
     __tablename__ = 'tournament_codes'
     
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     code = db.Column(db.String(100), unique=True, nullable=False)
     tournament_name = db.Column(db.String(100))
     team_id = db.Column(db.Integer, db.ForeignKey('teams.id'), nullable=True)
@@ -237,7 +237,7 @@ class DraftSession(db.Model):
     """Session for tracking a draft (e.g., a series of games)."""
     __tablename__ = 'draft_sessions'
     
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.String(100), nullable=False)
     draft_mode = db.Column(db.String(20), nullable=False)  # 'normal', 'fearless', 'ironman'
     team_blue_id = db.Column(db.Integer, db.ForeignKey('teams.id'), nullable=False)
@@ -310,7 +310,7 @@ class DraftGame(db.Model):
     """Individual game within a draft session."""
     __tablename__ = 'draft_games'
     
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     session_id = db.Column(db.Integer, db.ForeignKey('draft_sessions.id'), nullable=False)
     game_number = db.Column(db.Integer, nullable=False)
     
@@ -372,7 +372,7 @@ class DraftStep(db.Model):
     """Individual ban/pick action in a draft."""
     __tablename__ = 'draft_steps'
     
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     session_id = db.Column(db.Integer, db.ForeignKey('draft_sessions.id'), nullable=False)
     game_number = db.Column(db.Integer, nullable=False)
     step_number = db.Column(db.Integer, nullable=False)
@@ -421,7 +421,7 @@ class InhouseMatch(db.Model):
     """Match record for inhouse games."""
     __tablename__ = 'inhouse_matches'
     
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     match_id = db.Column(db.String(50), unique=True, nullable=False, index=True)
     game_date = db.Column(db.DateTime, nullable=False)
     game_duration_min = db.Column(db.Float, nullable=False)
@@ -450,7 +450,7 @@ class InhouseParticipant(db.Model):
     """Individual player stats in an inhouse match."""
     __tablename__ = 'inhouse_participants'
     
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     match_id = db.Column(db.Integer, db.ForeignKey('inhouse_matches.id'), nullable=False)
     
     # Player identification

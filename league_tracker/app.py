@@ -178,10 +178,21 @@ def create_app():
             # Create players
             for name, tag, region in zip(player_names, player_tags, player_regions):
                 if name and tag:
+                    # Try to get puuid from Riot API
+                    puuid = None
+                    riot_client = get_riot_client()
+                    if riot_client:
+                        try:
+                            puuid = riot_client.get_puuid_from_riot_id(name, tag, region)
+                            logger.info(f"Looked up puuid for {name}#{tag}: {puuid}")
+                        except Exception as e:
+                            logger.warning(f"Failed to look up puuid for {name}#{tag}: {e}")
+                    
                     player = Player(
                         game_name=name,
                         tag_line=tag,
-                        region=region
+                        region=region,
+                        puuid=puuid
                     )
                     db.session.add(player)
                     db.session.flush()
@@ -457,10 +468,25 @@ def create_app():
         
         if data.get('players'):
             for player_data in data['players']:
+                game_name = player_data.get('game_name')
+                tag_line = player_data.get('tag_line')
+                region = player_data.get('region', 'na1')
+                
+                # Try to get puuid from Riot API
+                puuid = None
+                riot_client = get_riot_client()
+                if riot_client:
+                    try:
+                        puuid = riot_client.get_puuid_from_riot_id(game_name, tag_line, region)
+                        logger.info(f"Looked up puuid for {game_name}#{tag_line}: {puuid}")
+                    except Exception as e:
+                        logger.warning(f"Failed to look up puuid for {game_name}#{tag_line}: {e}")
+                
                 player = Player(
-                    game_name=player_data.get('game_name'),
-                    tag_line=player_data.get('tag_line'),
-                    region=player_data.get('region', 'na1')
+                    game_name=game_name,
+                    tag_line=tag_line,
+                    region=region,
+                    puuid=puuid
                 )
                 db.session.add(player)
                 db.session.flush()
