@@ -23,6 +23,28 @@ from league_tracker.src.utils.draft_logic import DraftSessionManager, DraftModeV
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
+def format_timestamp(timestamp_ms):
+    """Format timestamp from milliseconds to readable date."""
+    if not timestamp_ms:
+        return "Unknown"
+    from datetime import datetime
+    try:
+        dt = datetime.fromtimestamp(timestamp_ms / 1000)
+        return dt.strftime("%b %d, %Y %H:%M")
+    except:
+        return "Unknown"
+
+
+def format_duration(seconds):
+    """Format duration in seconds to MM:SS."""
+    if not seconds:
+        return "0:00"
+    minutes = seconds // 60
+    secs = seconds % 60
+    return f"{minutes}:{secs:02d}"
+
+
 # Global scheduler instance
 scheduler = None
 
@@ -75,6 +97,10 @@ def create_app():
     app.config['SECRET_KEY'] = SECRET_KEY
     app.config['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = SQLALCHEMY_TRACK_MODIFICATIONS
+    
+    # Register custom Jinja2 filters
+    app.jinja_env.filters['format_timestamp'] = format_timestamp
+    app.jinja_env.filters['format_duration'] = format_duration
     
     db.init_app(app)
     
