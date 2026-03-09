@@ -1,0 +1,263 @@
+{% extends "base.html" %}
+
+{% block title %}Draft Created - League Tracker{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h1>Draft Session Created!</h1>
+        <p class="lead">Share these links with the appropriate teams:</p>
+    </div>
+
+    <div class="draft-links-container">
+        <!-- Blue Team Link -->
+        <div class="draft-link-card {% if draft.blue_link_claimed %}claimed{% endif %}">
+            <div class="link-card-header">
+                <div class="team-logo blue-logo">
+                    <span>B</span>
+                </div>
+                <h2>Blue Team</h2>
+            </div>
+            {% if draft.blue_link_claimed %}
+                <p class="link-status claimed">✓ Link Already Used</p>
+            {% else %}
+                <p>Share this link with the <strong>{{ draft.team_blue.name if draft.team_blue else 'Blue' }}</strong> team.</p>
+            {% endif %}
+            <div class="link-input-group">
+                <input type="text" readonly value="{{ request.url_root }}draft/{{ draft.id }}/blue" id="blue-link">
+                <button class="btn btn-copy" onclick="copyLink('blue-link')">Copy</button>
+            </div>
+            {% if not draft.blue_link_claimed %}
+                <a href="{{ url_for('draft_view', draft_session_id=draft.id, side='blue') }}" class="btn btn-primary btn-large">Join Blue Side</a>
+            {% else %}
+                <button class="btn btn-secondary btn-large" disabled>In Use</button>
+            {% endif %}
+        </div>
+
+        <!-- Red Team Link -->
+        <div class="draft-link-card {% if draft.red_link_claimed %}claimed{% endif %}">
+            <div class="link-card-header">
+                <div class="team-logo red-logo">
+                    <span>R</span>
+                </div>
+                <h2>Red Team</h2>
+            </div>
+            {% if draft.red_link_claimed %}
+                <p class="link-status claimed">✓ Link Already Used</p>
+            {% else %}
+                <p>Share this link with the <strong>{{ draft.team_red.name if draft.team_red else 'Red' }}</strong> team.</p>
+            {% endif %}
+            <div class="link-input-group">
+                <input type="text" readonly value="{{ request.url_root }}draft/{{ draft.id }}/red" id="red-link">
+                <button class="btn btn-copy" onclick="copyLink('red-link')">Copy</button>
+            </div>
+            {% if not draft.red_link_claimed %}
+                <a href="{{ url_for('draft_view', draft_session_id=draft.id, side='red') }}" class="btn btn-primary btn-large">Join Red Side</a>
+            {% else %}
+                <button class="btn btn-secondary btn-large" disabled>In Use</button>
+            {% endif %}
+        </div>
+
+        <!-- Spectator Link -->
+        <div class="draft-link-card spectator-card">
+            <div class="link-card-header">
+                <div class="team-logo spectator-logo">
+                    <span>👁</span>
+                </div>
+                <h2>Spectators</h2>
+            </div>
+            <p>Share this link with anyone who wants to watch the draft. Unlimited users can join as spectators.</p>
+            <div class="link-input-group">
+                <input type="text" readonly value="{{ request.url_root }}draft/{{ draft.id }}/spectator" id="spectator-link">
+                <button class="btn btn-copy" onclick="copyLink('spectator-link')">Copy</button>
+            </div>
+            <a href="{{ url_for('draft_view', draft_session_id=draft.id, side='spectator') }}" class="btn btn-secondary btn-large">Watch as Spectator</a>
+        </div>
+    </div>
+
+    <div class="draft-info">
+        <h3>Draft Details</h3>
+        <ul>
+            <li><strong>Session Name:</strong> {{ draft.name }}</li>
+            <li><strong>Draft Mode:</strong> {{ draft.draft_mode|title }}</li>
+            <li><strong>Blue Team:</strong> {{ draft.team_blue.name if draft.team_blue else 'Not assigned' }}</li>
+            <li><strong>Red Team:</strong> {{ draft.team_red.name if draft.team_red else 'Not assigned' }}</li>
+        </ul>
+    </div>
+
+    <div class="form-actions">
+        <a href="{{ url_for('draft_index') }}" class="btn btn-secondary">Back to Drafts</a>
+    </div>
+</div>
+
+<script>
+function copyLink(elementId) {
+    const copyText = document.getElementById(elementId);
+    copyText.select();
+    copyText.setSelectionRange(0, 99999); // For mobile devices
+    navigator.clipboard.writeText(copyText.value).then(function() {
+        alert('Link copied to clipboard!');
+    }, function(err) {
+        console.error('Could not copy text: ', err);
+    });
+}
+</script>
+
+<style>
+.draft-links-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    margin: 30px 0;
+}
+
+.draft-link-card {
+    background: #1e1e2e;
+    border-radius: 12px;
+    padding: 24px;
+    text-align: center;
+    border: 2px solid transparent;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.draft-link-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.draft-link-card.blue-card {
+    border-color: #0ac8f9;
+}
+
+.draft-link-card.red-card {
+    border-color: #f93402;
+}
+
+.draft-link-card.spectator-card {
+    border-color: #9d85f7;
+}
+
+.draft-link-card.claimed {
+    opacity: 0.7;
+    border-color: #555;
+}
+
+.draft-link-card.claimed:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.link-status {
+    font-weight: bold;
+    padding: 8px;
+    border-radius: 6px;
+    margin: 10px 0;
+}
+
+.link-status.claimed {
+    background: #2a4a2a;
+    color: #4caf50;
+}
+
+.link-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.link-card-header h2 {
+    margin: 0;
+    font-size: 1.4rem;
+}
+
+.team-logo {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+.blue-logo {
+    background: linear-gradient(135deg, #0ac8f9, #0653b8);
+    color: white;
+}
+
+.red-logo {
+    background: linear-gradient(135deg, #f93402, #b80c02);
+    color: white;
+}
+
+.spectator-logo {
+    background: linear-gradient(135deg, #9d85f7, #6b4fbf);
+    font-size: 1rem;
+}
+
+.link-input-group {
+    display: flex;
+    gap: 8px;
+    margin: 16px 0;
+}
+
+.link-input-group input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #3a3a4a;
+    border-radius: 6px;
+    background: #0d0d14;
+    color: #ccc;
+    font-size: 0.85rem;
+}
+
+.btn-copy {
+    padding: 10px 16px;
+    background: #3a3a4a;
+    border: none;
+    border-radius: 6px;
+    color: white;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-copy:hover {
+    background: #4a4a5a;
+}
+
+.draft-info {
+    background: #1e1e2e;
+    border-radius: 12px;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.draft-info h3 {
+    margin-top: 0;
+    color: #ccc;
+}
+
+.draft-info ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.draft-info li {
+    padding: 8px 0;
+    border-bottom: 1px solid #2a2a3a;
+    color: #aaa;
+}
+
+.draft-info li:last-child {
+    border-bottom: none;
+}
+
+.draft-info strong {
+    color: #fff;
+}
+</style>
+{% endblock %}

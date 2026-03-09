@@ -247,6 +247,10 @@ class DraftSession(db.Model):
     bans_per_team = db.Column(db.Integer, default=5)
     picks_per_team = db.Column(db.Integer, default=5)
     
+    # Link tracking - track which side links have been claimed
+    blue_link_claimed = db.Column(db.Boolean, default=False)
+    red_link_claimed = db.Column(db.Boolean, default=False)
+    
     # State
     is_active = db.Column(db.Boolean, default=True)
     current_game_number = db.Column(db.Integer, default=1)
@@ -291,8 +295,12 @@ class DraftSession(db.Model):
             'draft_mode': self.draft_mode,
             'team_blue': self.team_blue.to_dict() if self.team_blue else None,
             'team_red': self.team_red.to_dict() if self.team_red else None,
+            'team_blue_id': self.team_blue_id,
+            'team_red_id': self.team_red_id,
             'bans_per_team': self.bans_per_team,
             'picks_per_team': self.picks_per_team,
+            'blue_link_claimed': self.blue_link_claimed,
+            'red_link_claimed': self.red_link_claimed,
             'current_game_number': self.current_game_number,
             'current_phase': self.current_phase,
             'current_team_turn': self.current_team_turn,

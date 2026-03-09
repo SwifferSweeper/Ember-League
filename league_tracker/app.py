@@ -443,6 +443,7 @@ def create_app():
             draft_mode = request.form.get('draft_mode')
             team_blue_id = request.form.get('team_blue_id')
             team_red_id = request.form.get('team_red_id')
+            bans_per_team = request.form.get('bans_per_team', 5)
             
             if not all([name, draft_mode, team_blue_id, team_red_id]):
                 flash('All fields are required', 'error')
@@ -452,23 +453,65 @@ def create_app():
                 name=name,
                 draft_mode=draft_mode,
                 team_blue_id=team_blue_id,
-                team_red_id=team_red_id
+                team_red_id=team_red_id,
+                bans_per_team=int(bans_per_team)
             )
             db.session.add(draft)
             db.session.commit()
             
             flash('Draft session created!', 'success')
-            return redirect(url_for('draft_view', draft_session_id=draft.id))
+            # Show the shareable links page
+            return render_template('draft_created.html', draft=draft)
         
         teams = Team.query.all()
         return render_template('draft_create.html', teams=teams)
     
     @app.route('/draft/<int:draft_session_id>')
-    def draft_view(draft_session_id):
+    @app.route('/draft/<int:draft_session_id>/<side>')
+    def draft_view(draft_session_id, side=None):
         """View draft session."""
         draft_session = DraftSession.query.get_or_404(draft_session_id)
+        
+        # Validate side parameter and check if link is already claimed
+        if side and side not in ['blue', 'red', 'spectator']:
+            side = None
+        
+        # Check if blue or red link is already claimed (unless it's the same user returning)
+        if side == 'blue' and draft_session.blue_link_claimed:
+            # Check if this is the same user returning (stored in localStorage)
+            flash('Blue side link has already been used. Please use the original link or refresh.', 'error')
+            return render_template('draft_view.html', draft_session=draft_session, champions=get_all_champions(), user_side=None, link_expired=True)
+        
+        if side == 'red' and draft_session.red_link_claimed:
+            flash('Red side link has already been used. Please use the original link or refresh.', 'error')
+            return render_template('draft_view.html', draft_session=draft_session, champions=get_all_champions(), user_side=None, link_expired=True)
+        
+        # If valid side and not claimed, mark it as claimed
+        if side in ['blue', 'red']:
+            # Mark the side as claimed
+            if side == 'blue':
+                draft_session.blue_link_claimed = True
+            else:
+                draft_session.red_link_claimed = True
+            db.session.commit()
+        
         champions = get_all_champions()
-        return render_template('draft_view.html', draft_session=draft_session, champions=champions)
+        return render_template('draft_view.html', draft_session=draft_session, champions=champions, user_side=side)
+    
+    @app.route('/draft/<int:draft_session_id>/leave', methods=['POST'])
+    def draft_leave(draft_session_id):
+        """Leave a draft session and free up the side link."""
+        draft_session = DraftSession.query.get_or_404(draft_session_id)
+        side = request.form.get('side')
+        
+        if side == 'blue':
+            draft_session.blue_link_claimed = False
+        elif side == 'red':
+            draft_session.red_link_claimed = False
+        
+        db.session.commit()
+        flash(f'You have left the {side} side. The link is now available again.', 'success')
+        return redirect(url_for('draft_index'))
     
     @app.route('/draft/<int:draft_session_id>/history')
     def draft_history(draft_session_id):

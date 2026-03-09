@@ -3,358 +3,273 @@
 {% block title %}Draft: {{ draft_session.name }} - League Tracker{% endblock %}
 
 {% block content %}
-<div class="lck-draft-container" data-session-id="{{ draft_session.id }}">
-    <!-- Top Banner with Phase and Timer -->
-    <div class="lck-header">
-        <div class="lck-phase-indicator">
-            <span class="phase-label">{{ draft_session.current_phase|upper }}</span>
-            <span class="phase-subtitle">PHASE</span>
+{% if link_expired %}
+<div class="container">
+    <div class="alert alert-error">
+        <h2>Link Already Used</h2>
+        <p>This draft link has already been claimed. Each side link can only be used by one person at a time.</p>
+        <p>If you were the one who originally claimed this link and want to leave, please contact the draft creator.</p>
+        <a href="{{ url_for('draft_index') }}" class="btn btn-primary">Back to Drafts</a>
+    </div>
+</div>
+{% else %}
+<!-- LCK-Style Draft Screen -->
+<div class="lck-draft-wrapper">
+    <!-- LEFT SIDE - Blue Team -->
+    <div class="team-panel blue-team">
+        <!-- Team Header -->
+        <div class="team-header">
+            <div class="team-logo-large">
+                <span>{{ draft_session.team_blue.name[0] if draft_session.team_blue else 'B' }}</span>
+            </div>
+            <div class="team-names">
+                <h2 class="team-name">{{ draft_session.team_blue.name if draft_session.team_blue else 'BLUE TEAM' }}</h2>
+            </div>
+            <div class="team-ready {% if draft_session.is_active %}ready{% endif %}">
+                <span class="ready-indicator"></span>
+            </div>
         </div>
-        <div class="lck-timer-center">
-            <div class="lck-game-info">
+        
+        <!-- Bans Row -->
+        <div class="bans-section">
+            <div class="bans-label">BANS</div>
+            <div class="bans-row">
+                {% for i in range(draft_session.bans_per_team) %}
+                <div class="ban-slot" data-team="blue" data-slot="{{ i }}">
+                    <img class="ban-champion" src="" alt="Ban {{ i + 1 }}">
+                    <div class="ban-overlay">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </div>
+                    <span class="ban-number">{{ i + 1 }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Picks Column -->
+        <div class="picks-section">
+            <div class="picks-column">
+                {% set positions = ['TOP', 'JUNGLE', 'MID', 'ADC', 'SUPPORT'] %}
+                {% for i in range(draft_session.picks_per_team) %}
+                <div class="pick-slot {% if draft_session.current_team_turn == 'blue' and draft_session.current_phase in ['bans', 'picks'] and draft_session.is_active %}active{% endif %}" 
+                     data-team="blue" 
+                     data-slot="{{ i }}">
+                    <div class="pick-role">{{ positions[i] }}</div>
+                    <div class="pick-champion-container">
+                        <img class="pick-champion" src="" alt="Pick {{ i + 1 }}">
+                        <div class="pick-empty">
+                            <span class="pick-number">{{ i + 1 }}</span>
+                        </div>
+                    </div>
+                    <div class="pick-player">
+                        {% if draft_session.team_blue and draft_session.team_blue.players %}
+                            {% if i < draft_session.team_blue.players|length %}
+                                <span class="player-name">{{ draft_session.team_blue.players[i].game_name }}</span>
+                            {% else %}
+                                <span class="player-name tbd">TBD</span>
+                            {% endif %}
+                        {% else %}
+                            <span class="player-name tbd">TBD</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Ready Button -->
+        {% if user_side == 'blue' %}
+        <div class="team-actions">
+            <button id="blue-ready-btn" class="ready-button blue-ready">READY</button>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- CENTER - Draft Info -->
+    <div class="center-panel">
+        <!-- Phase and Timer -->
+        <div class="draft-info-section">
+            <div class="phase-display">
+                <span class="phase-label">{{ draft_session.current_phase|upper }} {{ ((draft_session.step_number + 1) // 2) if draft_session.current_phase == 'bans' else ((draft_session.step_number + 1) // 2) }}</span>
+            </div>
+            
+            <div class="timer-section">
+                <div class="timer-value" id="draft-timer">30</div>
+            </div>
+            
+            <div class="turn-indicator {% if draft_session.current_team_turn == 'blue' %}blue-turn{% else %}red-turn{% endif %}">
+                <span class="turn-text">{{ draft_session.team_blue.name if draft_session.team_blue else 'BLUE' }} vs {{ draft_session.team_red.name if draft_session.team_red else 'RED' }}</span>
+            </div>
+            
+            <div class="game-info">
                 <span class="game-number">GAME {{ draft_session.current_game_number }}</span>
-                <span class="game-divider">|</span>
-                <span class="draft-mode-label">{{ draft_session.draft_mode|upper }}</span>
-            </div>
-            <div class="lck-timer" id="draft-timer">30</div>
-            <div class="lck-turn-indicator {% if draft_session.current_team_turn == 'blue' %}blue-turn{% else %}red-turn{% endif %}">
-                {% if draft_session.is_active %}
-                    {{ draft_session.team_blue.name if draft_session.team_blue else 'BLUE' }} vs {{ draft_session.team_red.name if draft_session.team_red else 'RED' }}
-                {% else %}
-                    DRAFT COMPLETE
-                {% endif %}
+                <span class="draft-mode">{{ draft_session.draft_mode|upper }}</span>
             </div>
         </div>
-        <div class="lck-actions">
-            <button id="refresh-draft" class="lck-btn-icon" title="Refresh">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        
+        <!-- Action Buttons -->
+        <div class="center-actions">
+            <button id="refresh-draft" class="action-btn" title="Refresh">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
                 </svg>
             </button>
-            <a href="{{ url_for('draft_history', draft_session_id=draft_session.id) }}" class="lck-btn-icon" title="History">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <a href="{{ url_for('draft_history', draft_session_id=draft_session.id) }}" class="action-btn" title="History">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="10"/>
                     <polyline points="12 6 12 12 16 14"/>
                 </svg>
             </a>
+            {% if user_side and user_side != 'spectator' %}
+            <button id="leave-draft" class="action-btn warning" onclick="leaveDraft()" title="Leave Draft">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                    <polyline points="16 17 21 12 16 7"/>
+                    <line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+            </button>
+            {% endif %}
         </div>
-    </div>
-
-    <!-- Bans Section - Horizontal at Top -->
-    <div class="lck-bans-section">
-        <!-- Blue Side Bans -->
-        <div class="lck-bans-team blue-bans">
-            <div class="bans-label">BANS</div>
-            <div class="lck-bans-row">
-                {% for i in range(draft_session.bans_per_team) %}
-                    <div class="lck-ban-slot {% if draft_session.current_team_turn == 'blue' and draft_session.current_phase == 'bans' and draft_session.is_active %}active-slot{% endif %}" data-team="blue" data-slot="{{ i }}">
-                        <div class="ban-order">{{ i + 1 }}</div>
-                        <img class="lck-ban-champion" src="" alt="" style="display: none;">
-                        <div class="ban-placeholder">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
-                            </svg>
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>
-        </div>
-
-        <!-- VS Divider -->
-        <div class="lck-bans-vs">VS</div>
-
-        <!-- Red Side Bans -->
-        <div class="lck-bans-team red-bans">
-            <div class="lck-bans-row">
-                {% for i in range(draft_session.bans_per_team) %}
-                    <div class="lck-ban-slot {% if draft_session.current_team_turn == 'red' and draft_session.current_phase == 'bans' and draft_session.is_active %}active-slot{% endif %}" data-team="red" data-slot="{{ i }}">
-                        <div class="ban-order">{{ i + 1 }}</div>
-                        <img class="lck-ban-champion" src="" alt="" style="display: none;">
-                        <div class="ban-placeholder">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
-                            </svg>
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>
-            <div class="bans-label">BANS</div>
-        </div>
-    </div>
-
-    <!-- Main Draft Area -->
-    <div class="lck-main-draft">
-        <!-- Blue Team Side -->
-        <div class="lck-team-side blue-side {% if draft_session.current_team_turn == 'blue' and draft_session.is_active %}active-team{% endif %}">
-            <div class="lck-team-header">
-                <div class="team-logo-placeholder blue-logo">
-                    <span>{{ draft_session.team_blue.name[0] if draft_session.team_blue else 'B' }}</span>
-                </div>
-                <div class="team-info">
-                    <h2 class="team-name">{{ draft_session.team_blue.name if draft_session.team_blue else 'BLUE TEAM' }}</h2>
-                    <div class="team-record">Ready Status</div>
-                </div>
-                <div class="team-ready-indicator">
-                    <span id="blue-ready-status" class="ready-dot not-ready"></span>
-                </div>
-            </div>
-
-            <!-- Blue Picks - Vertical Column -->
-            <div class="lck-picks-column">
-                {% set positions = ['Top', 'Jungle', 'Mid', 'ADC', 'Support'] %}
-                {% for i in range(draft_session.picks_per_team) %}
-                    <div class="lck-pick-slot {% if draft_session.current_team_turn == 'blue' and draft_session.current_phase == 'picks' and draft_session.is_active %}active-slot{% endif %}" 
-                         data-team="blue" 
-                         data-slot="{{ i }}"
-                         data-position="{{ positions[i] if i < positions|length else '' }}">
-                        <div class="pick-player-info">
-                            {% if draft_session.team_blue and draft_session.team_blue.players %}
-                                {% if i < draft_session.team_blue.players|length %}
-                                    <span class="player-position">{{ positions[i] if i < positions|length else '' }}</span>
-                                    <span class="player-name-text">{{ draft_session.team_blue.players[i].game_name }}</span>
-                                {% else %}
-                                    <span class="player-position">{{ positions[i] if i < positions|length else '' }}</span>
-                                    <span class="player-name-text">TBD</span>
-                                {% endif %}
-                            {% else %}
-                                <span class="player-position">{{ positions[i] if i < positions|length else '' }}</span>
-                                <span class="player-name-text">Player {{ i + 1 }}</span>
-                            {% endif %}
-                        </div>
-                        <div class="pick-champion-container">
-                            <img class="lck-pick-champion" src="" alt="" style="display: none;">
-                            <div class="pick-placeholder">
-                                <span class="pick-number">{{ i + 1 }}</span>
-                            </div>
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>
-
-            <!-- Blue Team Actions -->
-            <div class="lck-team-actions">
-                <button id="blue-ready-btn" class="lck-ready-btn blue-ready">READY</button>
-                <a id="blue-side-link" href="#" class="lck-join-link">Join Blue Side →</a>
-            </div>
-        </div>
-
-        <!-- Center Divider with Timer -->
-        <div class="lck-center-divider">
-            <div class="divider-line"></div>
-            <div class="center-logo">
-                <div class="logo-text">DRAFT</div>
-            </div>
-            <div class="divider-line"></div>
-        </div>
-
-        <!-- Red Team Side -->
-        <div class="lck-team-side red-side {% if draft_session.current_team_turn == 'red' and draft_session.is_active %}active-team{% endif %}">
-            <div class="lck-team-header">
-                <div class="team-ready-indicator">
-                    <span id="red-ready-status" class="ready-dot not-ready"></span>
-                </div>
-                <div class="team-info">
-                    <h2 class="team-name">{{ draft_session.team_red.name if draft_session.team_red else 'RED TEAM' }}</h2>
-                    <div class="team-record">Ready Status</div>
-                </div>
-                <div class="team-logo-placeholder red-logo">
-                    <span>{{ draft_session.team_red.name[0] if draft_session.team_red else 'R' }}</span>
-                </div>
-            </div>
-
-            <!-- Red Picks - Vertical Column -->
-            <div class="lck-picks-column">
-                {% set positions = ['Top', 'Jungle', 'Mid', 'ADC', 'Support'] %}
-                {% for i in range(draft_session.picks_per_team) %}
-                    <div class="lck-pick-slot {% if draft_session.current_team_turn == 'red' and draft_session.current_phase == 'picks' and draft_session.is_active %}active-slot{% endif %}" 
-                         data-team="red" 
-                         data-slot="{{ i }}"
-                         data-position="{{ positions[i] if i < positions|length else '' }}">
-                        <div class="pick-champion-container">
-                            <img class="lck-pick-champion" src="" alt="" style="display: none;">
-                            <div class="pick-placeholder">
-                                <span class="pick-number">{{ i + 1 }}</span>
-                            </div>
-                        </div>
-                        <div class="pick-player-info">
-                            {% if draft_session.team_red and draft_session.team_red.players %}
-                                {% if i < draft_session.team_red.players|length %}
-                                    <span class="player-name-text">{{ draft_session.team_red.players[i].game_name }}</span>
-                                    <span class="player-position">{{ positions[i] if i < positions|length else '' }}</span>
-                                {% else %}
-                                    <span class="player-name-text">TBD</span>
-                                    <span class="player-position">{{ positions[i] if i < positions|length else '' }}</span>
-                                {% endif %}
-                            {% else %}
-                                <span class="player-name-text">Player {{ i + 1 }}</span>
-                                <span class="player-position">{{ positions[i] if i < positions|length else '' }}</span>
-                            {% endif %}
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>
-
-            <!-- Red Team Actions -->
-            <div class="lck-team-actions">
-                <button id="red-ready-btn" class="lck-ready-btn red-ready">READY</button>
-                <a id="red-side-link" href="#" class="lck-join-link">← Join Red Side</a>
-            </div>
-        </div>
-    </div>
-
-    <!-- Champion Selection Panel -->
-    <div class="lck-champion-panel">
-        <div class="panel-header">
-            <div class="panel-title">
+        
+        <!-- Champion Selection Panel -->
+        <div class="champion-select-section">
+            <div class="champion-panel-header">
                 <h3>CHAMPION SELECT</h3>
-                <span class="panel-subtitle" id="selection-status">Select a champion to {{ draft_session.current_phase[:-1] if draft_session.current_phase else 'ban' }}</span>
+                <span class="selection-hint" id="selection-status">
+                    {% if not draft_session.is_active %}
+                        Draft complete
+                    {% elif not match_started %}
+                        Waiting for both teams to ready...
+                    {% else %}
+                        Select a champion to {{ draft_session.current_phase[:-1] if draft_session.current_phase else 'ban' }}
+                    {% endif %}
+                </span>
             </div>
-            <div class="panel-filters">
-                <div class="filter-group">
-                    <select id="filter-position" class="lck-select">
-                        <option value="">All Roles</option>
-                        <option value="top">Top</option>
-                        <option value="jungle">Jungle</option>
-                        <option value="mid">Mid</option>
-                        <option value="adc">ADC</option>
-                        <option value="support">Support</option>
-                    </select>
+            <div class="champion-filters">
+                <select id="filter-position" class="role-filter">
+                    <option value="">All Roles</option>
+                    <option value="top">Top</option>
+                    <option value="jungle">Jungle</option>
+                    <option value="mid">Mid</option>
+                    <option value="adc">ADC</option>
+                    <option value="support">Support</option>
+                </select>
+                <input type="text" id="search-champion" class="champion-search" placeholder="Search champion...">
+            </div>
+            <div class="champion-grid" id="champion-grid">
+                {% for champion in champions %}
+                <div class="champion-card" data-champion-id="{{ champion.id }}" data-champion-name="{{ champion.name }}">
+                    <img src="https://ddragon.leagueoflegends.com/cdn/img/champion/splash/{{ champion.name }}_0.jpg" 
+                         alt="{{ champion.name }}"
+                         loading="lazy"
+                         onerror="this.style.display='none'">
+                    <span class="champion-name">{{ champion.name }}</span>
                 </div>
-                <div class="filter-group search-group">
-                    <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="11" cy="11" r="8"/>
-                        <path d="M21 21l-4.35-4.35"/>
-                    </svg>
-                    <input type="text" id="search-champion" class="lck-search" placeholder="Search champion...">
-                </div>
+                {% endfor %}
             </div>
         </div>
-        <div class="lck-champion-grid" id="champion-grid">
-            {% for champion in champions %}
-                <div class="lck-champion-card" data-champion-id="{{ champion.id }}" data-champion-name="{{ champion.name }}">
-                    <div class="champion-image-wrapper">
-                        <img src="https://ddragon.leagueoflegends.com/cdn/img/champion/splash/{{ champion.name }}_0.jpg" 
-                             alt="{{ champion.name }}"
-                             loading="lazy"
-                             onerror="this.parentElement.innerHTML='<div class=\\'champion-error\\'>?</div>'">
-                    </div>
-                    <div class="champion-info">
-                        <span class="champion-name-text">{{ champion.name }}</span>
-                    </div>
-                </div>
-            {% endfor %}
-        </div>
     </div>
-
-    <!-- Admin Actions Bar -->
-    {% if draft_session.is_active %}
-    <div class="lck-admin-bar">
-        <button id="undo-action" class="lck-admin-btn" disabled>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M3 7v6h6M21 17v-6h-6"/>
-                <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6.36 2.64L3 13"/>
-                <path d="M3 7a9 9 0 0 1 9-9 9 9 0 0 1 6.36 2.64L21 7"/>
-            </svg>
-            Undo
-        </button>
-        <button id="reset-game" class="lck-admin-btn warning" data-game="{{ draft_session.current_game_number }}">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M23 4v6h-6M1 20v-6h6"/>
-                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
-            </svg>
-            Reset Game
-        </button>
-    </div>
-    {% endif %}
-
-    <!-- Team Selection Modal -->
-    <div id="team-selection-modal" class="lck-modal" style="display: none;">
-        <div class="lck-modal-content">
-            <div class="modal-header">
-                <h2>JOIN DRAFT</h2>
-                <button class="modal-close-btn" id="close-team-selection">&times;</button>
+    
+    <!-- RIGHT SIDE - Red Team -->
+    <div class="team-panel red-team">
+        <!-- Team Header -->
+        <div class="team-header">
+            <div class="team-ready {% if draft_session.is_active %}ready{% endif %}">
+                <span class="ready-indicator"></span>
             </div>
-            <div class="modal-body">
-                <p class="modal-description">Select your team to join the draft</p>
-                
-                <div class="team-selection-grid">
-                    <div class="team-selection-card blue-card" data-team="{{ draft_session.team_blue.id if draft_session.team_blue else '' }}" data-side="blue">
-                        <div class="selection-card-header">
-                            <div class="selection-team-logo blue">
-                                <span>{{ draft_session.team_blue.name[0] if draft_session.team_blue else 'B' }}</span>
-                            </div>
-                            <div class="selection-team-info">
-                                <h3>BLUE SIDE</h3>
-                                <p>{{ draft_session.team_blue.name if draft_session.team_blue else 'Blue Team' }}</p>
-                            </div>
+            <div class="team-names">
+                <h2 class="team-name">{{ draft_session.team_red.name if draft_session.team_red else 'RED TEAM' }}</h2>
+            </div>
+            <div class="team-logo-large">
+                <span>{{ draft_session.team_red.name[0] if draft_session.team_red else 'R' }}</span>
+            </div>
+        </div>
+        
+        <!-- Bans Row -->
+        <div class="bans-section">
+            <div class="bans-label">BANS</div>
+            <div class="bans-row">
+                {% for i in range(draft_session.bans_per_team) %}
+                <div class="ban-slot" data-team="red" data-slot="{{ i }}">
+                    <img class="ban-champion" src="" alt="Ban {{ i + 1 }}">
+                    <div class="ban-overlay">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </div>
+                    <span class="ban-number">{{ i + 1 }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Picks Column -->
+        <div class="picks-section">
+            <div class="picks-column">
+                {% set positions = ['TOP', 'JUNGLE', 'MID', 'ADC', 'SUPPORT'] %}
+                {% for i in range(draft_session.picks_per_team) %}
+                <div class="pick-slot {% if draft_session.current_team_turn == 'red' and draft_session.current_phase in ['bans', 'picks'] and draft_session.is_active %}active{% endif %}" 
+                     data-team="red" 
+                     data-slot="{{ i }}">
+                    <div class="pick-player">
+                        {% if draft_session.team_red and draft_session.team_red.players %}
+                            {% if i < draft_session.team_red.players|length %}
+                                <span class="player-name">{{ draft_session.team_red.players[i].game_name }}</span>
+                            {% else %}
+                                <span class="player-name tbd">TBD</span>
+                            {% endif %}
+                        {% else %}
+                            <span class="player-name tbd">TBD</span>
+                        {% endif %}
+                    </div>
+                    <div class="pick-champion-container">
+                        <img class="pick-champion" src="" alt="Pick {{ i + 1 }}">
+                        <div class="pick-empty">
+                            <span class="pick-number">{{ i + 1 }}</span>
                         </div>
-                        <button class="lck-join-btn blue-join" data-team="{{ draft_session.team_blue.id if draft_session.team_blue else '' }}" data-side="blue">
-                            JOIN BLUE
-                        </button>
                     </div>
-
-                    <div class="team-selection-card red-card" data-team="{{ draft_session.team_red.id if draft_session.team_red else '' }}" data-side="red">
-                        <div class="selection-card-header">
-                            <div class="selection-team-logo red">
-                                <span>{{ draft_session.team_red.name[0] if draft_session.team_red else 'R' }}</span>
-                            </div>
-                            <div class="selection-team-info">
-                                <h3>RED SIDE</h3>
-                                <p>{{ draft_session.team_red.name if draft_session.team_red else 'Red Team' }}</p>
-                            </div>
-                        </div>
-                        <button class="lck-join-btn red-join" data-team="{{ draft_session.team_red.id if draft_session.team_red else '' }}" data-side="red">
-                            JOIN RED
-                        </button>
-                    </div>
+                    <div class="pick-role">{{ positions[i] }}</div>
                 </div>
-
-                <div class="ready-section" id="ready-section" style="display: none;">
-                    <p class="ready-instruction">You have joined the <span id="selected-side-name"></span> side</p>
-                    <button class="lck-ready-btn large" id="modal-ready-btn">
-                        READY
-                    </button>
-                </div>
+                {% endfor %}
             </div>
         </div>
-    </div>
-
-    <!-- Position Selection Modal -->
-    <div id="position-modal" class="lck-modal" style="display: none;">
-        <div class="lck-modal-content small">
-            <h3>SELECT POSITION</h3>
-            <p>Choose the position for this pick</p>
-            <div class="position-options">
-                <button class="position-btn" data-position="top">
-                    <span class="position-icon">⚔️</span>
-                    <span>TOP</span>
-                </button>
-                <button class="position-btn" data-position="jungle">
-                    <span class="position-icon">🌲</span>
-                    <span>JUNGLE</span>
-                </button>
-                <button class="position-btn" data-position="mid">
-                    <span class="position-icon">🔮</span>
-                    <span>MID</span>
-                </button>
-                <button class="position-btn" data-position="adc">
-                    <span class="position-icon">🏹</span>
-                    <span>ADC</span>
-                </button>
-                <button class="position-btn" data-position="support">
-                    <span class="position-icon">💚</span>
-                    <span>SUPPORT</span>
-                </button>
-            </div>
-            <button class="lck-cancel-btn modal-close">Cancel</button>
+        
+        <!-- Ready Button -->
+        {% if user_side == 'red' %}
+        <div class="team-actions">
+            <button id="red-ready-btn" class="ready-button red-ready">READY</button>
         </div>
+        {% endif %}
     </div>
 </div>
+
+<!-- User Side Indicator -->
+{% if user_side %}
+<div class="user-side-toast {{ user_side }}-toast">
+    {% if user_side == 'spectator' %}
+        SPECTATOR MODE
+    {% else %}
+        You are on {{ user_side|upper }} side
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- Spectator Notice -->
+{% if user_side == 'spectator' %}
+<div class="spectator-notice">
+    Spectators cannot participate in the draft
+</div>
+{% endif %}
 
 <script>
     // Draft state management
     const draftState = {
         sessionId: {{ draft_session.id | tojson }},
+        currentGameNumber: {{ draft_session.current_game_number | tojson }},
         currentTurn: {{ draft_session.current_team_turn | tojson }},
         currentPhase: {{ draft_session.current_phase | tojson }},
         stepNumber: {{ draft_session.step_number | tojson }},
@@ -370,7 +285,7 @@
         blueReady: false,
         redReady: false,
         userTeam: null,
-        userSide: null
+        userSide: {{ user_side | tojson if user_side else 'null' }}
     };
 
     // Champion data for client-side use
@@ -380,13 +295,638 @@
         championMap[championsData[i].id] = championsData[i];
     }
 
+    // Add styles
+    var style = document.createElement('style');
+    style.textContent = `
+        .lck-draft-wrapper {
+            display: grid;
+            grid-template-columns: 1fr 400px 1fr;
+            gap: 20px;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 100%);
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        
+        .team-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .blue-team {
+            align-items: flex-end;
+        }
+        
+        .red-team {
+            align-items: flex-start;
+        }
+        
+        .team-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px 20px;
+            background: rgba(10, 150, 255, 0.1);
+            border: 1px solid rgba(10, 150, 255, 0.3);
+            border-radius: 8px;
+        }
+        
+        .red-team .team-header {
+            background: rgba(255, 50, 50, 0.1);
+            border-color: rgba(255, 50, 50, 0.3);
+        }
+        
+        .team-logo-large {
+            width: 50px;
+            height: 50px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+        
+        .blue-team .team-logo-large {
+            background: linear-gradient(135deg, #0a96ff, #0033aa);
+            color: white;
+        }
+        
+        .red-team .team-logo-large {
+            background: linear-gradient(135deg, #ff3232, #aa0000);
+            color: white;
+        }
+        
+        .team-names {
+            flex: 1;
+        }
+        
+        .team-name {
+            margin: 0;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #fff;
+        }
+        
+        .team-ready .ready-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #666;
+        }
+        
+        .team-ready.ready .ready-indicator {
+            background: #4caf50;
+            box-shadow: 0 0 10px #4caf50;
+        }
+        
+        /* Bans Section */
+        .bans-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .bans-label {
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: #888;
+            letter-spacing: 2px;
+        }
+        
+        .bans-row {
+            display: flex;
+            gap: 6px;
+        }
+        
+        .ban-slot {
+            width: 50px;
+            height: 50px;
+            position: relative;
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid #333;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .ban-slot.active {
+            border-color: #ffd700;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+            animation: banPulse 1s infinite;
+        }
+        
+        @keyframes banPulse {
+            0%, 100% { box-shadow: 0 0 10px rgba(255, 215, 0, 0.3); }
+            50% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.6); }
+        }
+        
+        .ban-champion {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .ban-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .ban-slot.has-champion .ban-overlay {
+            opacity: 1;
+        }
+        
+        .ban-overlay svg {
+            width: 30px;
+            height: 30px;
+            color: #ff4444;
+        }
+        
+        .ban-number {
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            font-size: 0.6rem;
+            color: #888;
+        }
+        
+        /* Picks Section */
+        .picks-section {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+        }
+        
+        .picks-column {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .pick-slot {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px solid #333;
+            border-radius: 6px;
+            min-width: 200px;
+        }
+        
+        .blue-team .pick-slot {
+            flex-direction: row;
+        }
+        
+        .red-team .pick-slot {
+            flex-direction: row-reverse;
+            text-align: right;
+        }
+        
+        .pick-slot.active {
+            border-color: #ffd700;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+        }
+        
+        .pick-role {
+            font-size: 0.65rem;
+            font-weight: bold;
+            color: #666;
+            width: 55px;
+            text-transform: uppercase;
+        }
+        
+        .pick-champion-container {
+            width: 44px;
+            height: 44px;
+            position: relative;
+            background: #1a1a2e;
+            border: 2px solid #333;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .pick-champion {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .pick-empty {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #111;
+        }
+        
+        .pick-number {
+            font-size: 0.8rem;
+            color: #444;
+        }
+        
+        .pick-player {
+            flex: 1;
+        }
+        
+        .player-name {
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: #fff;
+        }
+        
+        .player-name.tbd {
+            color: #555;
+        }
+        
+        /* Team Actions */
+        .team-actions {
+            display: flex;
+            justify-content: center;
+            padding: 10px;
+        }
+        
+        .ready-button {
+            padding: 12px 40px;
+            font-size: 1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.3s;
+        }
+        
+        .blue-ready {
+            background: linear-gradient(135deg, #0a96ff, #0033aa);
+            color: white;
+        }
+        
+        .blue-ready:hover {
+            box-shadow: 0 0 20px rgba(10, 150, 255, 0.5);
+        }
+        
+        .red-ready {
+            background: linear-gradient(135deg, #ff3232, #aa0000);
+            color: white;
+        }
+        
+        .red-ready:hover {
+            box-shadow: 0 0 20px rgba(255, 50, 50, 0.5);
+        }
+        
+        .ready-button:disabled {
+            background: #333;
+            color: #666;
+            cursor: not-allowed;
+        }
+        
+        /* Center Panel */
+        .center-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        
+        .draft-info-section {
+            text-align: center;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            border: 1px solid #333;
+        }
+        
+        .phase-display {
+            margin-bottom: 10px;
+        }
+        
+        .phase-label {
+            font-size: 1rem;
+            font-weight: bold;
+            color: #ffd700;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+        
+        .timer-section {
+            margin: 15px 0;
+        }
+        
+        .timer-value {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+        }
+        
+        .turn-indicator {
+            padding: 10px 20px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+        
+        .turn-indicator.blue-turn {
+            background: linear-gradient(135deg, rgba(10, 150, 255, 0.2), rgba(0, 51, 170, 0.2));
+            border: 1px solid rgba(10, 150, 255, 0.5);
+        }
+        
+        .turn-indicator.red-turn {
+            background: linear-gradient(135deg, rgba(255, 50, 50, 0.2), rgba(170, 0, 0, 0.2));
+            border: 1px solid rgba(255, 50, 50, 0.5);
+        }
+        
+        .turn-text {
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: #fff;
+        }
+        
+        .game-info {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 10px;
+            font-size: 0.75rem;
+            color: #666;
+        }
+        
+        .center-actions {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .action-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 1px solid #444;
+            background: rgba(0, 0, 0, 0.5);
+            color: #888;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            text-decoration: none;
+        }
+        
+        .action-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+        
+        .action-btn.warning:hover {
+            background: rgba(255, 50, 50, 0.3);
+            border-color: #ff3232;
+            color: #ff3232;
+        }
+        
+        /* Champion Selection */
+        .champion-select-section {
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            padding: 15px;
+            border: 1px solid #333;
+        }
+        
+        .champion-panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .champion-panel-header h3 {
+            margin: 0;
+            font-size: 0.9rem;
+            color: #fff;
+            letter-spacing: 2px;
+        }
+        
+        .selection-hint {
+            font-size: 0.7rem;
+            color: #888;
+        }
+        
+        .champion-filters {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        
+        .role-filter, .champion-search {
+            flex: 1;
+            padding: 8px;
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 4px;
+            color: #fff;
+            font-size: 0.8rem;
+        }
+        
+        .role-filter:focus, .champion-search:focus {
+            outline: none;
+            border-color: #0a96ff;
+        }
+        
+        .champion-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .champion-card {
+            aspect-ratio: 1;
+            position: relative;
+            background: #1a1a2e;
+            border: 2px solid #333;
+            border-radius: 4px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .champion-card:hover {
+            border-color: #0a96ff;
+            transform: scale(1.05);
+        }
+        
+        .champion-card.unavailable {
+            opacity: 0.4;
+            pointer-events: none;
+        }
+        
+        .champion-card.selected {
+            border-color: #ffd700;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+        
+        .champion-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .champion-card .champion-name {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 2px;
+            background: rgba(0, 0, 0, 0.7);
+            font-size: 0.5rem;
+            color: #fff;
+            text-align: center;
+        }
+        
+        /* User Side Toast */
+        .user-side-toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 30px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            letter-spacing: 2px;
+            z-index: 1000;
+        }
+        
+        .blue-toast {
+            background: linear-gradient(135deg, #0a96ff, #0033aa);
+            color: white;
+            box-shadow: 0 0 20px rgba(10, 150, 255, 0.5);
+        }
+        
+        .red-toast {
+            background: linear-gradient(135deg, #ff3232, #aa0000);
+            color: white;
+            box-shadow: 0 0 20px rgba(255, 50, 50, 0.5);
+        }
+        
+        .spectator-toast {
+            background: linear-gradient(135deg, #9d85f7, #6b4fbf);
+            color: white;
+            box-shadow: 0 0 20px rgba(157, 133, 247, 0.5);
+        }
+        
+        /* Spectator Notice */
+        .spectator-notice {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 20px;
+            background: rgba(157, 133, 247, 0.2);
+            border: 1px solid #9d85f7;
+            border-radius: 6px;
+            color: #9d85f7;
+            font-size: 0.8rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 1400px) {
+            .lck-draft-wrapper {
+                grid-template-columns: 1fr 350px 1fr;
+            }
+        }
+        
+        @media (max-width: 1100px) {
+            .lck-draft-wrapper {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto auto;
+            }
+            
+            .blue-team, .red-team {
+                align-items: center;
+            }
+            
+            .picks-column {
+                flex-direction: row !important;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .pick-slot {
+                min-width: 150px;
+            }
+        }
+    `;
+    document.head.appendChild(style);
+
     // Initialize draft
     document.addEventListener('DOMContentLoaded', function() {
         initializeDraft();
         setupEventListeners();
         loadDraftState();
         startTimer();
+        
+        // If user has a pre-assigned side, set it up
+        if (draftState.userSide) {
+            setupPreAssignedSide();
+        }
     });
+    
+    function setupPreAssignedSide() {
+        if (draftState.userSide === 'spectator') {
+            disableAllInteraction();
+            return;
+        }
+        
+        // Hide team selection modal and set the side
+        var modal = document.getElementById('team-selection-modal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+        
+        // Store the side in localStorage
+        localStorage.setItem('draft_selection_' + draftState.sessionId, JSON.stringify({
+            team: draftState.userSide === 'blue' ? '{{ draft_session.team_blue_id }}' : '{{ draft_session.team_red_id }}',
+            side: draftState.userSide
+        }));
+        
+        draftState.userTeam = draftState.userSide === 'blue' ? '{{ draft_session.team_blue_id }}' : '{{ draft_session.team_red_id }}';
+    }
+    
+    function disableAllInteraction() {
+        var championCards = document.querySelectorAll('.champion-card');
+        for (var i = 0; i < championCards.length; i++) {
+            championCards[i].style.pointerEvents = 'none';
+            championCards[i].style.opacity = '0.5';
+        }
+        
+        var blueBtn = document.getElementById('blue-ready-btn');
+        var redBtn = document.getElementById('red-ready-btn');
+        
+        if (blueBtn) blueBtn.style.display = 'none';
+        if (redBtn) redBtn.style.display = 'none';
+        
+        var searchInput = document.getElementById('search-champion');
+        var filterSelect = document.getElementById('filter-position');
+        if (searchInput) searchInput.disabled = true;
+        if (filterSelect) filterSelect.disabled = true;
+    }
 
     function initializeDraft() {
         updateChampionGrid();
@@ -394,7 +934,7 @@
 
     function setupEventListeners() {
         // Champion selection
-        var championCards = document.querySelectorAll('.lck-champion-card');
+        var championCards = document.querySelectorAll('.champion-card');
         for (var i = 0; i < championCards.length; i++) {
             championCards[i].addEventListener('click', function() {
                 selectChampion(this);
@@ -407,19 +947,6 @@
 
         // Action buttons
         document.getElementById('refresh-draft').addEventListener('click', loadDraftState);
-        document.getElementById('undo-action').addEventListener('click', undoLastAction);
-        document.getElementById('reset-game').addEventListener('click', resetCurrentGame);
-
-        // Position modal
-        var positionBtns = document.querySelectorAll('.position-btn');
-        for (var i = 0; i < positionBtns.length; i++) {
-            positionBtns[i].addEventListener('click', function() {
-                selectPosition(this.dataset.position);
-            });
-        }
-        document.querySelectorAll('.modal-close').forEach(function(btn) {
-            btn.addEventListener('click', closePositionModal);
-        });
 
         // Ready buttons
         var blueReadyBtn = document.getElementById('blue-ready-btn');
@@ -436,135 +963,42 @@
                 setTeamReady('red');
             });
         }
-
-        // Team selection modal
-        setupTeamSelectionModal();
-    }
-
-    function setupTeamSelectionModal() {
-        var storedSelection = localStorage.getItem('draft_selection_' + draftState.sessionId);
-        if (storedSelection) {
-            var selection = JSON.parse(storedSelection);
-            draftState.userTeam = selection.team;
-            draftState.userSide = selection.side;
-            return;
-        }
-
-        var modal = document.getElementById('team-selection-modal');
-        if (modal) {
-            modal.style.display = 'flex';
-        }
-
-        var closeBtn = document.getElementById('close-team-selection');
-        if (closeBtn) {
-            closeBtn.addEventListener('click', function() {
-                modal.style.display = 'none';
-            });
-        }
-
-        var joinButtons = document.querySelectorAll('.lck-join-btn');
-        for (var i = 0; i < joinButtons.length; i++) {
-            joinButtons[i].addEventListener('click', function() {
-                var team = this.dataset.team;
-                var side = this.dataset.side;
-                selectTeamAndSide(team, side);
-            });
-        }
-
-        var modalReadyBtn = document.getElementById('modal-ready-btn');
-        if (modalReadyBtn) {
-            modalReadyBtn.addEventListener('click', function() {
-                setTeamReadyFromModal();
-            });
-        }
-    }
-
-    function selectTeamAndSide(teamId, side) {
-        draftState.userTeam = teamId;
-        draftState.userSide = side;
-
-        localStorage.setItem('draft_selection_' + draftState.sessionId, JSON.stringify({
-            team: teamId,
-            side: side
-        }));
-
-        var teamGrid = document.querySelector('.team-selection-grid');
-        var readySection = document.getElementById('ready-section');
-        var sideNameEl = document.getElementById('selected-side-name');
-
-        if (teamGrid) {
-            teamGrid.style.display = 'none';
-        }
-        if (readySection) {
-            readySection.style.display = 'block';
-        }
-        if (sideNameEl) {
-            sideNameEl.textContent = side === 'blue' ? 'BLUE' : 'RED';
-            sideNameEl.className = side === 'blue' ? 'blue' : 'red';
-        }
-    }
-
-    function setTeamReadyFromModal() {
-        if (!draftState.userSide) {
-            alert('Please select a team and side first');
-            return;
-        }
-
-        setTeamReady(draftState.userSide);
-
-        setTimeout(function() {
-            var modal = document.getElementById('team-selection-modal');
-            if (modal) {
-                modal.style.display = 'none';
-            }
-        }, 500);
     }
 
     function selectChampion(card) {
+        if (draftState.userSide === 'spectator') {
+            alert('Spectators cannot participate in the draft.');
+            return;
+        }
+        
+        if (draftState.userSide && draftState.userSide !== draftState.currentTurn) {
+            alert('It is not your team\'s turn.');
+            return;
+        }
+        
         if (!draftState.isActive) {
-            alert('The draft is complete. No more actions can be taken.');
+            alert('The draft is complete.');
             return;
         }
 
         if (!draftState.matchStarted) {
-            alert('Please wait for both teams to be ready before drafting.');
+            alert('Please wait for both teams to be ready.');
             return;
         }
 
-        var championId = parseInt(card.dataset.championId);
-        
         if (card.classList.contains('unavailable')) {
             alert('This champion has already been banned or picked!');
             return;
         }
 
-        draftState.selectedChampion = championId;
+        draftState.selectedChampion = parseInt(card.dataset.championId);
 
-        var allCards = document.querySelectorAll('.lck-champion-card');
+        var allCards = document.querySelectorAll('.champion-card');
         for (var i = 0; i < allCards.length; i++) {
             allCards[i].classList.remove('selected');
         }
         card.classList.add('selected');
 
-        if (draftState.draftMode === 'ironman' && draftState.currentPhase === 'picks') {
-            showPositionModal();
-        } else {
-            executeAction();
-        }
-    }
-
-    function showPositionModal() {
-        document.getElementById('position-modal').style.display = 'flex';
-    }
-
-    function closePositionModal() {
-        document.getElementById('position-modal').style.display = 'none';
-        draftState.selectedPosition = null;
-    }
-
-    function selectPosition(position) {
-        draftState.selectedPosition = position;
-        closePositionModal();
         executeAction();
     }
 
@@ -609,7 +1043,7 @@
         draftState.selectedChampion = null;
         draftState.selectedPlayer = null;
         draftState.selectedPosition = null;
-        var cards = document.querySelectorAll('.lck-champion-card');
+        var cards = document.querySelectorAll('.champion-card');
         for (var i = 0; i < cards.length; i++) {
             cards[i].classList.remove('selected');
         }
@@ -638,6 +1072,8 @@
                     draftState.redReady = game.red_ready;
                     draftState.matchStarted = game.match_started;
                     updateReadyStatus();
+                    updateBans(game);
+                    updatePicks(game);
                 }
 
                 if (session.timer_remaining !== undefined) {
@@ -646,8 +1082,6 @@
                 }
 
                 updateTurnIndicator(session);
-                updateBans(game);
-                updatePicks(game);
                 
                 if (!session.is_active || (game && !game.match_started)) {
                     disableChampionSelection();
@@ -656,11 +1090,6 @@
                 }
                 
                 updateChampionGrid();
-
-                var undoBtn = document.getElementById('undo-action');
-                if (undoBtn) {
-                    undoBtn.disabled = !session.is_active;
-                }
             })
             .catch(function(error) {
                 console.error('Error loading draft state:', error);
@@ -681,59 +1110,49 @@
         if (timerElement) {
             timerElement.textContent = seconds;
             if (seconds <= 5) {
-                timerElement.classList.add('timer-warning');
+                timerElement.style.color = '#ff4444';
             } else {
-                timerElement.classList.remove('timer-warning');
+                timerElement.style.color = '#fff';
             }
         }
     }
 
     function updateTurnIndicator(session) {
-        var blueSide = document.querySelector('.blue-side');
-        var redSide = document.querySelector('.red-side');
-        var turnIndicator = document.querySelector('.lck-turn-indicator');
-
-        if (blueSide) {
-            blueSide.classList.remove('active-team');
-        }
-        if (redSide) {
-            redSide.classList.remove('active-team');
-        }
-
-        if (session.is_active) {
-            if (session.current_team_turn === 'blue') {
-                if (blueSide) blueSide.classList.add('active-team');
-                if (turnIndicator) turnIndicator.className = 'lck-turn-indicator blue-turn';
-            } else {
-                if (redSide) redSide.classList.add('active-team');
-                if (turnIndicator) turnIndicator.className = 'lck-turn-indicator red-turn';
-            }
-            if (turnIndicator) {
-                turnIndicator.textContent = session.team_blue.name + ' vs ' + session.team_red.name;
-            }
-        } else {
-            if (turnIndicator) {
-                turnIndicator.textContent = 'DRAFT COMPLETE';
-                turnIndicator.className = 'lck-turn-indicator';
-            }
-        }
-
-        // Update phase indicator
+        var turnIndicator = document.querySelector('.turn-indicator');
         var phaseLabel = document.querySelector('.phase-label');
-        if (phaseLabel) {
-            phaseLabel.textContent = session.current_phase.toUpperCase();
+        var selectionStatus = document.getElementById('selection-status');
+
+        if (turnIndicator) {
+            turnIndicator.className = 'turn-indicator ' + session.current_team_turn + '-turn';
+            turnIndicator.querySelector('.turn-text').textContent = session.team_blue.name + ' vs ' + session.team_red.name;
         }
 
-        // Update selection status
-        var selectionStatus = document.getElementById('selection-status');
+        if (phaseLabel) {
+            var phaseNum = Math.ceil(session.step_number / 2);
+            phaseLabel.textContent = session.current_phase.toUpperCase() + ' ' + phaseNum;
+        }
+
         if (selectionStatus) {
             if (!session.is_active) {
                 selectionStatus.textContent = 'Draft complete';
             } else if (!draftState.matchStarted) {
-                selectionStatus.textContent = 'Waiting for teams to be ready...';
+                selectionStatus.textContent = 'Waiting for both teams to ready...';
             } else {
                 selectionStatus.textContent = 'Select a champion to ' + (session.current_phase === 'bans' ? 'ban' : 'pick');
             }
+        }
+        
+        // Update active slots
+        var blueSlots = document.querySelectorAll('.blue-team .pick-slot, .blue-team .ban-slot');
+        var redSlots = document.querySelectorAll('.red-team .pick-slot, .red-team .ban-slot');
+        
+        blueSlots.forEach(function(slot) { slot.classList.remove('active'); });
+        redSlots.forEach(function(slot) { slot.classList.remove('active'); });
+        
+        if (session.is_active && session.current_team_turn === 'blue') {
+            blueSlots.forEach(function(slot) { slot.classList.add('active'); });
+        } else if (session.is_active && session.current_team_turn === 'red') {
+            redSlots.forEach(function(slot) { slot.classList.add('active'); });
         }
     }
 
@@ -751,24 +1170,22 @@
             var teamBans = bans[team];
             
             for (var i = 0; i < draftState.bansPerTeam; i++) {
-                var slot = document.querySelector('.lck-ban-slot[data-team="' + team + '"][data-slot="' + i + '"]');
+                var slot = document.querySelector('.' + team + '-team .ban-slot[data-slot="' + i + '"]');
                 if (slot) {
-                    var img = slot.querySelector('.lck-ban-champion');
-                    var placeholder = slot.querySelector('.ban-placeholder');
+                    var img = slot.querySelector('.ban-champion');
                     
-                    if (i < teamBans.length) {
+                    if (i < teamBans.length && teamBans[i]) {
                         var championId = teamBans[i];
                         var championIdNum = parseInt(championId);
                         var champion = championMap[championId] || championMap[championIdNum];
                         
                         if (champion) {
                             img.src = 'https://ddragon.leagueoflegends.com/cdn/img/champion/splash/' + champion.name + '_0.jpg';
-                            img.style.display = 'block';
-                            if (placeholder) placeholder.style.display = 'none';
+                            slot.classList.add('has-champion');
                         }
                     } else {
-                        img.style.display = 'none';
-                        if (placeholder) placeholder.style.display = 'flex';
+                        img.src = '';
+                        slot.classList.remove('has-champion');
                     }
                 }
             }
@@ -789,12 +1206,12 @@
             var teamPicks = picks[team];
             
             for (var i = 0; i < draftState.picksPerTeam; i++) {
-                var slot = document.querySelector('.lck-pick-slot[data-team="' + team + '"][data-slot="' + i + '"]');
+                var slot = document.querySelector('.' + team + '-team .pick-slot[data-slot="' + i + '"]');
                 if (slot) {
-                    var img = slot.querySelector('.lck-pick-champion');
-                    var placeholder = slot.querySelector('.pick-placeholder');
+                    var img = slot.querySelector('.pick-champion');
+                    var empty = slot.querySelector('.pick-empty');
                     
-                    if (i < teamPicks.length) {
+                    if (i < teamPicks.length && teamPicks[i]) {
                         var pick = teamPicks[i];
                         var championId = pick.champion_id;
                         var championIdNum = parseInt(championId);
@@ -803,11 +1220,12 @@
                         if (champion) {
                             img.src = 'https://ddragon.leagueoflegends.com/cdn/img/champion/splash/' + champion.name + '_0.jpg';
                             img.style.display = 'block';
-                            if (placeholder) placeholder.style.display = 'none';
+                            if (empty) empty.style.display = 'none';
                         }
                     } else {
+                        img.src = '';
                         img.style.display = 'none';
-                        if (placeholder) placeholder.style.display = 'flex';
+                        if (empty) empty.style.display = 'flex';
                     }
                 }
             }
@@ -823,7 +1241,7 @@
                 for (var i = 0; i < data.length; i++) {
                     availableIds[data[i].id] = true;
                 }
-                var cards = document.querySelectorAll('.lck-champion-card');
+                var cards = document.querySelectorAll('.champion-card');
                 for (var i = 0; i < cards.length; i++) {
                     var championId = parseInt(cards[i].dataset.championId);
                     if (availableIds[championId]) {
@@ -844,7 +1262,7 @@
         var searchTerm = document.getElementById('search-champion').value.toLowerCase();
         var positionFilter = document.getElementById('filter-position').value.toLowerCase();
 
-        var cards = document.querySelectorAll('.lck-champion-card');
+        var cards = document.querySelectorAll('.champion-card');
         for (var i = 0; i < cards.length; i++) {
             var name = cards[i].dataset.championName.toLowerCase();
             var champion = championMap[parseInt(cards[i].dataset.championId)];
@@ -856,33 +1274,36 @@
     }
 
     function updateReadyStatus() {
-        var blueStatus = document.getElementById('blue-ready-status');
-        var redStatus = document.getElementById('red-ready-status');
         var blueBtn = document.getElementById('blue-ready-btn');
         var redBtn = document.getElementById('red-ready-btn');
-
-        if (blueStatus) {
-            blueStatus.className = 'ready-dot ' + (draftState.blueReady ? 'ready' : 'not-ready');
-        }
-        if (redStatus) {
-            redStatus.className = 'ready-dot ' + (draftState.redReady ? 'ready' : 'not-ready');
-        }
 
         if (blueBtn) {
             blueBtn.disabled = draftState.blueReady || draftState.matchStarted;
             if (draftState.blueReady) {
                 blueBtn.textContent = 'READY!';
+                blueBtn.style.background = '#4caf50';
             }
         }
         if (redBtn) {
             redBtn.disabled = draftState.redReady || draftState.matchStarted;
             if (draftState.redReady) {
                 redBtn.textContent = 'READY!';
+                redBtn.style.background = '#4caf50';
             }
         }
     }
 
     function setTeamReady(teamColor) {
+        if (draftState.userSide === 'spectator') {
+            alert('Spectators cannot ready for the draft.');
+            return;
+        }
+        
+        if (draftState.userSide && draftState.userSide !== teamColor) {
+            alert('You are on the ' + draftState.userSide + ' side.');
+            return;
+        }
+        
         var url = '/api/draft/sessions/' + draftState.sessionId + '/game/' + draftState.currentGameNumber + '/ready';
         fetch(url, {
             method: 'POST',
@@ -912,39 +1333,34 @@
             alert('Failed to set ready status');
         });
     }
-
-    function undoLastAction() {
-        alert('Undo functionality coming soon!');
-    }
-
-    function resetCurrentGame() {
-        if (!confirm('Are you sure you want to reset this game? All bans and picks will be cleared.')) {
+    
+    function leaveDraft() {
+        if (!confirm('Are you sure you want to leave this draft?')) {
             return;
         }
-
-        var url = '/api/draft/sessions/' + draftState.sessionId + '/reset/' + draftState.currentGameNumber;
-        fetch(url, {
-            method: 'POST'
+        
+        var formData = new FormData();
+        formData.append('side', draftState.userSide);
+        
+        fetch('/draft/' + draftState.sessionId + '/leave', {
+            method: 'POST',
+            body: formData
         })
-        .then(function(response) { return response.json(); })
-        .then(function(data) {
-            if (data.error) {
-                alert(data.error);
-            } else {
-                loadDraftState();
-            }
+        .then(function(response) {
+            localStorage.removeItem('draft_selection_' + draftState.sessionId);
+            window.location.href = '/draft';
         })
         .catch(function(error) {
-            console.error('Error resetting game:', error);
-            alert('Failed to reset game');
+            console.error('Error leaving draft:', error);
+            alert('Failed to leave draft');
         });
     }
 
     function disableChampionSelection() {
-        var cards = document.querySelectorAll('.lck-champion-card');
+        var cards = document.querySelectorAll('.champion-card');
         for (var i = 0; i < cards.length; i++) {
-            cards[i].classList.add('draft-complete');
-            cards[i].classList.remove('available');
+            cards[i].style.pointerEvents = 'none';
+            cards[i].style.opacity = '0.3';
         }
         
         document.getElementById('search-champion').disabled = true;
@@ -952,9 +1368,10 @@
     }
     
     function enableChampionSelection() {
-        var cards = document.querySelectorAll('.lck-champion-card');
+        var cards = document.querySelectorAll('.champion-card');
         for (var i = 0; i < cards.length; i++) {
-            cards[i].classList.remove('draft-complete');
+            cards[i].style.pointerEvents = 'auto';
+            cards[i].style.opacity = '1';
         }
         
         document.getElementById('search-champion').disabled = false;
@@ -964,4 +1381,5 @@
     // Auto-refresh every 5 seconds
     setInterval(loadDraftState, 5000);
 </script>
+{% endif %}
 {% endblock %}
