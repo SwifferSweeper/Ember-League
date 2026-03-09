@@ -10,7 +10,7 @@ import atexit
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
 # Import config using absolute import for gunicorn compatibility
-from league_tracker.config import SECRET_KEY, DEBUG, SQLALCHEMY_DATABASE_URI, SQLALCHEMY_TRACK_MODIFICATIONS, \
+from league_tracker.config import SECRET_KEY, DEBUG, SQLALCHEMY_DATABASE_URI, SQLALCHEMY_TRACK_MODIFICATIONS, SQLALCHEMY_ENGINE_OPTIONS, \
                    RIOT_API_KEY, validate_api_key, AUTO_COLLECT_ENABLED, AUTO_COLLECT_INTERVAL
 from league_tracker.src.database import db, Team, Player, Match, MatchParticipant, Admin, team_players, TournamentCode, DraftSession, DraftGame, DraftStep, InhouseMatch, InhouseParticipant
 from league_tracker.src.api.riot_client import RiotClient, RiotAPIError
@@ -695,6 +695,38 @@ def create_app():
             "secret_key_set": bool(os.getenv("SECRET_KEY")),
             "all_env_keys": list(os.environ.keys())
         })
+    
+    @app.route('/debug/db')
+    def debug_db():
+        """Debug route to check database status."""
+        try:
+            # Check table counts
+            team_count = Team.query.count()
+            player_count = Player.query.count()
+            match_count = Match.query.count()
+            
+            # Get recent teams
+            recent_teams = Team.query.order_by(Team.created_at.desc()).limit(5).all()
+            
+            # Get recent players
+            recent_players = Player.query.order_by(Player.created_at.desc()).limit(10).all()
+            
+            return jsonify({
+                "status": "connected",
+                "database_uri": str(SQLALCHEMY_DATABASE_URI)[:50] + "...",
+                "tables": {
+                    "teams": team_count,
+                    "players": player_count,
+                    "matches": match_count
+                },
+                "recent_teams": [t.to_dict() for t in recent_teams],
+                "recent_players": [p.to_dict() for p in recent_players]
+            })
+        except Exception as e:
+            return jsonify({
+                "status": "error",
+                "error": str(e)
+            })
     
     # ==================== ERROR HANDLERS ====================
     

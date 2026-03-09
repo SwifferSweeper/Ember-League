@@ -31,8 +31,7 @@ DATABASE_URL = os.getenv("DATABASE_URL", "")
 if DATABASE_URL:
     # Use PostgreSQL on Railway
     SQLALCHEMY_DATABASE_URI = DATABASE_URL
-    # Disable foreign key constraints for SQLite compatibility
-    SQLALCHEMY_ENGINE_OPTIONS = {"isolation_level": "autocommit"}
+    SQLALCHEMY_ENGINE_OPTIONS = {}
 else:
     # Use SQLite for local development
     SQLALCHEMY_DATABASE_URI = f"sqlite:///{DATABASE_PATH}"
