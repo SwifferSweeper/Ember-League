@@ -162,7 +162,10 @@ def create_app():
     def match_detail(match_id):
         """Match detail page."""
         match = Match.query.filter_by(match_id=match_id).first_or_404()
-        return render_template('match_detail.html', match=match)
+        participants = MatchParticipant.query.filter_by(match_id=match.id).all()
+        # Create a dictionary mapping puuid to Player for quick lookup
+        players = {p.puuid: p for p in Player.query.all() if p.puuid}
+        return render_template('match_detail.html', match=match, participants=participants, players=players)
     
     @app.route('/players/<puuid>/history')
     def player_league_history(puuid):
