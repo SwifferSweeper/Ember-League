@@ -133,7 +133,11 @@ def create_app():
     @app.route('/')
     def index():
         """Home page."""
-        return render_template('index.html')
+        total_teams = Team.query.count()
+        total_players = Player.query.count()
+        total_matches = Match.query.count()
+        teams = Team.query.order_by(Team.created_at.desc()).limit(6).all()
+        return render_template('index.html', total_teams=total_teams, total_players=total_players, total_matches=total_matches, teams=teams)
     
     @app.route('/teams')
     def teams_list():
